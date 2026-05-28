@@ -100,9 +100,11 @@ public class PointEarnService {
      * @param memberId 회원 식별자
      * @param originalPtxno 원 적립 거래번호
      * @param requestAmount 요청 적립취소 금액
+     * @param baseDtm 만료 여부 판단 기준 시각
      * @return 적립취소 대상 원장
      */
-    public PntEarnMst findEarnForCancel(String memberId, String originalPtxno, long requestAmount) {
+    public PntEarnMst findEarnForCancel(String memberId, String originalPtxno, long requestAmount,
+            LocalDateTime baseDtm) {
         PntEarnMst earn = pntEarnMstRepository.findById(originalPtxno)
                 .filter(value -> value.getMemberId().equals(memberId))
                 .orElseThrow(() -> new ApiException(ErrorCode.NO_POINT_HISTORY));
@@ -112,6 +114,9 @@ public class PointEarnService {
         }
         if (earn.getCancelAmount() > 0) {
             throw new ApiException(ErrorCode.ALREADY_CANCELED);
+        }
+        if (earn.isExpiredAt(baseDtm) || earn.getExpiredAmount() > 0 || earn.getStatus() == EarnStatus.EXPIRED) {
+            throw new ApiException(ErrorCode.EXPIRED_POINT);
         }
         if (earn.getRemainingAmount() != requestAmount) {
             throw new ApiException(ErrorCode.PARTIAL_CANCEL_FAIL);

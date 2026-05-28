@@ -86,8 +86,9 @@ public class PointFacadeService {
         pointEarnService.validatePositive(request.amount());
         pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
 
+        LocalDateTime now = LocalDateTime.now();
         PntMemberBal balance = pointBalanceService.findBalance(memberId);
-        PntEarnMst earn = pointEarnService.findEarnForCancel(memberId, request.originalPtxno(), request.amount());
+        PntEarnMst earn = pointEarnService.findEarnForCancel(memberId, request.originalPtxno(), request.amount(), now);
 
         long cancelAmount = earn.getRemainingAmount();
         pointBalanceService.decreaseBalance(balance, earn.getEarnType(), cancelAmount);
