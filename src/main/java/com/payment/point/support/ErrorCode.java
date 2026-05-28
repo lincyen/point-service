@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum ErrorCode {
     INVALID_PARAMETER("요청 파라미터가 올바르지 않습니다."),
     INVALID_USER("유효하지 않은 회원입니다."),
-    NOT_E가NOUGH_POINT("포인트 잔액이 부족합니다."),
+    NOT_ENOUGH_POINT("포인트 잔액이 부족합니다."),
     INCORRECT_POINT("포인트 금액이 올바르지 않습니다."),
     ALREADY_CANCELED("이미 취소된 거래입니다."),
     NO_POINT_HISTORY("포인트 거래 이력을 찾을 수 없습니다."),
