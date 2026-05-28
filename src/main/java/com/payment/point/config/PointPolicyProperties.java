@@ -1,11 +1,13 @@
 package com.payment.point.config;
 
+import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "point")
 public record PointPolicyProperties(
         Earn earn,
-        Member member
+        Member member,
+        Lock lock
 ) {
 
     public record Earn(
@@ -19,6 +21,11 @@ public record PointPolicyProperties(
 
     public record Member(
             long maxBalanceAmount
+    ) {
+    }
+
+    public record Lock(
+            Duration ttl
     ) {
     }
 }
