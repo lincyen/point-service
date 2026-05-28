@@ -25,3 +25,5 @@ point:
     max-expire-period: P5Y
   member:
     max-balance-amount: 1000000
+  lock:
+    ttl: 10s
