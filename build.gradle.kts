@@ -24,8 +24,10 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("com.github.ben-manes.caffeine:caffeine")
     runtimeOnly("com.h2database:h2")
 
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
