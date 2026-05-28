@@ -14,7 +14,8 @@ public enum ErrorCode {
     TIMEOUT("요청 시간이 초과되었습니다."),
     SYSTEM_ERROR("시스템 오류가 발생했습니다."),
     DUPLICATED_ORDER("이미 처리된 주문번호입니다."),
-    NO_REMAIN_POINT("취소 가능한 잔여 포인트가 없습니다.");
+    NO_REMAIN_POINT("취소 가능한 잔여 포인트가 없습니다."),
+    POINT_PROCESSING("이미 동일 사용자 거래건이 처리중입니다.");
 
     ErrorCode(String message) {
         this.message = message;
