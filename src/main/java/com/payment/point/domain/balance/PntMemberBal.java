@@ -8,12 +8,17 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * POINT.PNT_MEMBER_BAL - 회원별 포인트 잔액
  */
+@Getter
 @Entity
 @Table(name = "PNT_MEMBER_BAL", schema = "POINT")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PntMemberBal {
 
     /** 회원 식별자 (ULID) */
@@ -46,9 +51,6 @@ public class PntMemberBal {
     @Column(name = "UPDATED_AT", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected PntMemberBal() {
-    }
-
     public PntMemberBal(String memberId) {
         this.memberId = memberId;
         this.normalAmount = 0L;
@@ -66,34 +68,6 @@ public class PntMemberBal {
     @PreUpdate
     void preUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public String getMemberId() {
-        return memberId;
-    }
-
-    public Long getNormalAmount() {
-        return normalAmount;
-    }
-
-    public Long getManualAmount() {
-        return manualAmount;
-    }
-
-    public Long getExpiredAmount() {
-        return expiredAmount;
-    }
-
-    public Long getVersion() {
-        return version;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 
     public long getTotalAmount() {

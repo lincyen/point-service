@@ -9,12 +9,17 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * POINT.PNT_EARN_MST - 적립 원장
  */
+@Getter
 @Entity
 @Table(name = "PNT_EARN_MST", schema = "POINT")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PntEarnMst {
 
     /** 적립 거래번호, PK */
@@ -72,9 +77,6 @@ public class PntEarnMst {
     @Column(name = "UPDATED_AT", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected PntEarnMst() {
-    }
-
     public PntEarnMst(String ptxno, String memberId, EarnType earnType, Long earnAmount, LocalDateTime expireAt) {
         this.ptxno = ptxno;
         this.memberId = memberId;
@@ -99,58 +101,6 @@ public class PntEarnMst {
     @PreUpdate
     void preUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public String getPtxno() {
-        return ptxno;
-    }
-
-    public String getMemberId() {
-        return memberId;
-    }
-
-    public EarnType getEarnType() {
-        return earnType;
-    }
-
-    public Long getEarnAmount() {
-        return earnAmount;
-    }
-
-    public Long getRemainingAmount() {
-        return remainingAmount;
-    }
-
-    public Long getUseAmount() {
-        return useAmount;
-    }
-
-    public Long getCancelAmount() {
-        return cancelAmount;
-    }
-
-    public Long getExpiredAmount() {
-        return expiredAmount;
-    }
-
-    public LocalDateTime getFirstExpireAt() {
-        return firstExpireAt;
-    }
-
-    public LocalDateTime getExpireAt() {
-        return expireAt;
-    }
-
-    public EarnStatus getStatus() {
-        return status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 
     public boolean isManual() {

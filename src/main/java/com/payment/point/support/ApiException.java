@@ -1,5 +1,8 @@
 package com.payment.point.support;
 
+import lombok.Getter;
+
+@Getter
 public class ApiException extends RuntimeException {
 
     private final ErrorCode errorCode;
@@ -9,7 +12,4 @@ public class ApiException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
-    public ErrorCode getErrorCode() {
-        return errorCode;
-    }
 }
