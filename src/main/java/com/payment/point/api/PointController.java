@@ -41,11 +41,11 @@ public class PointController {
      * @return 적립취소응답
      */
     @PostMapping("/members/{memberId}/points/earn-cancel")
-    public ResponseEntity<EarnCancelResponse> cancelEarn(
+    public ResponseEntity<EarnCancelResponse> earnCancel(
             @PathVariable String memberId,
             @Valid @RequestBody EarnCancelRequest request
     ) {
-        EarnCancelResponse response = pointFacadeService.cancelEarn(memberId, request);
+        EarnCancelResponse response = pointFacadeService.earnCancel(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

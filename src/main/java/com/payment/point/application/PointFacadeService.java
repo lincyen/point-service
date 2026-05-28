@@ -82,7 +82,7 @@ public class PointFacadeService {
      */
     @MemberPointLocked
     @Transactional
-    public EarnCancelResponse cancelEarn(String memberId, EarnCancelRequest request) {
+    public EarnCancelResponse earnCancel(String memberId, EarnCancelRequest request) {
         pointEarnService.validatePositive(request.amount());
         pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
 
