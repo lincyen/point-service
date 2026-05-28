@@ -14,6 +14,7 @@ import com.payment.point.api.use.UseRequest;
 import com.payment.point.api.use.UseResponse;
 import com.payment.point.domain.balance.PntMemberBal;
 import com.payment.point.domain.balance.PointBalanceService;
+import com.payment.point.domain.earn.PntEarnMst;
 import com.payment.point.domain.earn.PointEarnService;
 import com.payment.point.domain.transaction.PointTransactionService;
 import com.payment.point.domain.transaction.TxType;
@@ -27,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 포인트 API Facade 서비스.
  *
- * <p>트랜잭션 경계를 관리하고 도메인 서비스를 조합한다.</p>
+ * <p>트랜잭션 경계를 관리하고 도메인 서비스를 조합한다. 현재 신규 Facade는 적립과 적립취소 API를 우선 제공한다.</p>
  */
 @Service
 @AllArgsConstructor
@@ -69,9 +70,34 @@ public class PointFacadeService {
         return new EarnResponse(ptxno, memberId, request.amount(), balance.getTotalAmount());
     }
 
+    /**
+     * 포인트 적립취소를 처리한다.
+     *
+     * <p>동일 회원 요청 락은 AOP로 적용되고, 본 메서드는 단일 DB 트랜잭션 안에서
+     * 원 적립 원장 취소, 잔액 감소, 거래 이력 생성을 수행한다.</p>
+     *
+     * @param memberId 회원 식별자
+     * @param request 적립취소 요청
+     * @return 적립취소 응답
+     */
+    @MemberPointLocked
     @Transactional
     public EarnCancelResponse cancelEarn(String memberId, EarnCancelRequest request) {
-        throw new UnsupportedOperationException("TODO: migrate earn cancel from OLD_PointFacadeService");
+        pointEarnService.validatePositive(request.amount());
+        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
+
+        PntMemberBal balance = pointBalanceService.findBalance(memberId);
+        PntEarnMst earn = pointEarnService.findEarnForCancel(memberId, request.originalPtxno(), request.amount());
+
+        long cancelAmount = earn.getRemainingAmount();
+        pointBalanceService.decreaseBalance(balance, earn.getEarnType(), cancelAmount);
+        earn.cancelEarn();
+
+        String ptxno = pointIdGenerator.generatePtxno();
+        pointTransactionService.appendTransaction(ptxno, earn.getPtxno(), memberId, request.orderNo(),
+                request.orderDtm(), TxType.EARN_CNCL, cancelAmount, balance.getTotalAmount(), null);
+
+        return new EarnCancelResponse(ptxno, memberId, cancelAmount, balance.getTotalAmount());
     }
 
     @Transactional

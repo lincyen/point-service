@@ -1,5 +1,7 @@
 package com.payment.point.api;
 
+import com.payment.point.api.earn.EarnCancelRequest;
+import com.payment.point.api.earn.EarnCancelResponse;
 import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.earn.EarnResponse;
 import com.payment.point.application.PointFacadeService;
@@ -29,6 +31,21 @@ public class PointController {
     @PostMapping("/members/{memberId}/points/earn")
     public ResponseEntity<EarnResponse> earn(@PathVariable String memberId, @Valid @RequestBody EarnRequest request) {
         EarnResponse response = pointFacadeService.earn(memberId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * <b>포인트 적립취소</b>
+     * @param memberId 회원아이디
+     * @param request {@link EarnCancelRequest 적립취소 요청}
+     * @return 적립취소응답
+     */
+    @PostMapping("/members/{memberId}/points/earn-cancel")
+    public ResponseEntity<EarnCancelResponse> cancelEarn(
+            @PathVariable String memberId,
+            @Valid @RequestBody EarnCancelRequest request
+    ) {
+        EarnCancelResponse response = pointFacadeService.cancelEarn(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
