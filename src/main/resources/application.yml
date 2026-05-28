@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: "jdbc:h2:mem:point;MODE=Oracle;INIT=CREATE SCHEMA IF NOT EXISTS POINT"
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: POINT
+        format_sql: true
+    open-in-view: false
+
+point:
+  earn:
+    min-amount: 1
+    max-amount: 100000
+    default-expire-period: P1Y
+    min-expire-period: P1D
+    max-expire-period: P5Y
+  member:
+    max-balance-amount: 1000000
