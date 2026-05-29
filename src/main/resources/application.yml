@@ -20,7 +20,7 @@ point:
   earn:
     min-amount: 1
     max-amount: 100000
-    default-expire-period: P1Y
+    default-expire-period: P365D
     min-expire-period: P1D
     max-expire-period: P5Y
   member:
