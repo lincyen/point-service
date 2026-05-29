@@ -28,7 +28,7 @@ public class PntEarnMst {
     private String ptxno;
 
     /** 회원 식별자 */
-    @Column(name = "MEMBER_ID", length = 26, nullable = false)
+    @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;
 
     /** 적립 유형 */

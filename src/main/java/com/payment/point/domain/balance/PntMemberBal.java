@@ -21,9 +21,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PntMemberBal {
 
-    /** 회원 식별자 (ULID) */
+    /** 회원 식별자 (UUID 하이픈 제거 문자열) */
     @Id
-    @Column(name = "MEMBER_ID", length = 26, nullable = false)
+    @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;
 
     /** 일반 적립 포인트 잔액 */

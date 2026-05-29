@@ -31,7 +31,7 @@ public class PntTrHist {
     private String optxno;
 
     /** 회원 식별자 */
-    @Column(name = "MEMBER_ID", length = 26, nullable = false, updatable = false)
+    @Column(name = "MEMBER_ID", length = 32, nullable = false, updatable = false)
     private String memberId;
 
     /** 클라이언트 주문번호 */
