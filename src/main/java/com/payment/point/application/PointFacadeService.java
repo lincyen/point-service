@@ -118,7 +118,7 @@ public class PointFacadeService {
 
     @Transactional(readOnly = true)
     public BalanceResponse getBalance(String memberId) {
-        throw new UnsupportedOperationException("TODO: migrate balance query from OLD_PointFacadeService");
+        return pointBalanceService.getBalance(memberId);
     }
 
     @Transactional(readOnly = true)

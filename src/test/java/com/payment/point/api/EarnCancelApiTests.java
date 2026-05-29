@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class EarnCancelApiTests extends PointApiTestSupport {
 
     @Test
-    @DisplayName("적립취소")
+    @DisplayName("성공-적립취소")
     void earnCancelCancelsRemainingPoint() {
         String memberId = memberId();
         EarnResponse earnResponse = pointFacadeService.earn(

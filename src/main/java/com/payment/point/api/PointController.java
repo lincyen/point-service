@@ -1,5 +1,6 @@
 package com.payment.point.api;
 
+import com.payment.point.api.balance.BalanceResponse;
 import com.payment.point.api.earn.EarnCancelRequest;
 import com.payment.point.api.earn.EarnCancelResponse;
 import com.payment.point.api.earn.EarnRequest;
@@ -7,6 +8,7 @@ import com.payment.point.api.earn.EarnResponse;
 import com.payment.point.application.PointFacadeService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,5 +49,16 @@ public class PointController {
     ) {
         EarnCancelResponse response = pointFacadeService.earnCancel(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * <b>포인트 잔액 조회</b>
+     * @param memberId 회원아이디
+     * @return 잔액조회응답
+     */
+    @GetMapping("/members/{memberId}/points/balance")
+    public ResponseEntity<BalanceResponse> getBalance(@PathVariable String memberId) {
+        BalanceResponse response = pointFacadeService.getBalance(memberId);
+        return ResponseEntity.ok(response);
     }
 }

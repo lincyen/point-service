@@ -33,19 +33,18 @@ public class PointBalanceService {
      * @return 조회되었거나 신규 생성된 회원 잔액
      */
     public PntMemberBal getOrCreateBalance(String memberId) {
-        return pntMemberBalRepository.findByMemberId(memberId)
+        return pntMemberBalRepository.findById(memberId)
                 .orElseGet(() -> pntMemberBalRepository.saveAndFlush(new PntMemberBal(memberId)));
     }
 
     /**
-     * 회원 잔액을 조회한다.
+     * 회원 잔액을 조회한다. 회원 row 가 없는 경우 "유효하지 않은 회원입니다." 처리
      *
      * @param memberId 회원 식별자
      * @return 회원 잔액
      */
     public PntMemberBal findBalance(String memberId) {
-        return pntMemberBalRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_USER));
+        return pntMemberBalRepository.findById(memberId).orElseThrow(() -> new ApiException(ErrorCode.INVALID_USER));
     }
 
     /**
@@ -55,8 +54,7 @@ public class PointBalanceService {
      * @return 회원 잔액 응답 DTO
      */
     public BalanceResponse getBalance(String memberId) {
-        PntMemberBal balance = pntMemberBalRepository.findById(memberId)
-                .orElseGet(() -> new PntMemberBal(memberId));
+        PntMemberBal balance = findBalance(memberId);
 
         return new BalanceResponse(
                 balance.getMemberId(),
@@ -111,4 +109,5 @@ public class PointBalanceService {
             throw new ApiException(ErrorCode.INCORRECT_POINT);
         }
     }
+
 }
