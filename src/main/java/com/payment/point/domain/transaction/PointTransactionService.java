@@ -1,10 +1,12 @@
 package com.payment.point.domain.transaction;
 
 import com.payment.point.api.history.HistoryResponse;
+import com.payment.point.api.history.TransactionLookupResponse;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 /**
@@ -84,5 +86,42 @@ public class PointTransactionService {
                 .toList();
 
         return new HistoryResponse(memberId, histories);
+    }
+
+    /**
+     * 회원과 주문번호로 거래 처리 여부를 조회한다.
+     *
+     * <p>현재 주문번호는 동일 회원 내 모든 포인트 거래 유형에서 중복을 허용하지 않으므로,
+     * 거래 유형은 선택 필터로만 사용한다.</p>
+     *
+     * @param memberId 회원 식별자
+     * @param orderNo 클라이언트 주문번호
+     * @param txType 거래 유형 nullable
+     * @return 거래 조회 응답 DTO
+     */
+    public TransactionLookupResponse getTransactionByOrder(String memberId, String orderNo, TxType txType) {
+        Optional<PntTrHist> transaction = pntTrHistRepository.findByMemberIdAndOrderNo(memberId, orderNo)
+                .stream()
+                .filter(history -> txType == null || history.getTxType() == txType)
+                .findFirst();
+
+        return transaction
+                .map(history -> new TransactionLookupResponse(
+                        memberId,
+                        orderNo,
+                        txType,
+                        true,
+                        new TransactionLookupResponse.Item(
+                                history.getPtxno(),
+                                history.getOptxno(),
+                                history.getOrderDtm(),
+                                history.getTxType(),
+                                history.getTxAmount(),
+                                history.getRemainingAmount(),
+                                history.getExpireAt(),
+                                history.getCreatedAt()
+                        )
+                ))
+                .orElseGet(() -> new TransactionLookupResponse(memberId, orderNo, txType, false, null));
     }
 }

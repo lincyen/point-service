@@ -5,7 +5,13 @@ import com.payment.point.api.earn.EarnCancelRequest;
 import com.payment.point.api.earn.EarnCancelResponse;
 import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.earn.EarnResponse;
+import com.payment.point.api.history.TransactionLookupResponse;
+import com.payment.point.api.use.UseCancelRequest;
+import com.payment.point.api.use.UseCancelResponse;
+import com.payment.point.api.use.UseRequest;
+import com.payment.point.api.use.UseResponse;
 import com.payment.point.application.PointFacadeService;
+import com.payment.point.domain.transaction.TxType;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -52,6 +59,33 @@ public class PointController {
     }
 
     /**
+     * <b>포인트 사용</b>
+     * @param memberId 회원아이디
+     * @param request {@link UseRequest 사용 요청}
+     * @return 사용응답
+     */
+    @PostMapping("/members/{memberId}/points/use")
+    public ResponseEntity<UseResponse> use(@PathVariable String memberId, @Valid @RequestBody UseRequest request) {
+        UseResponse response = pointFacadeService.use(memberId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * <b>포인트 사용취소</b>
+     * @param memberId 회원아이디
+     * @param request {@link UseCancelRequest 사용취소 요청}
+     * @return 사용취소응답
+     */
+    @PostMapping("/members/{memberId}/points/use-cancel")
+    public ResponseEntity<UseCancelResponse> useCancel(
+            @PathVariable String memberId,
+            @Valid @RequestBody UseCancelRequest request
+    ) {
+        UseCancelResponse response = pointFacadeService.cancelUse(memberId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
      * <b>포인트 잔액 조회</b>
      * @param memberId 회원아이디
      * @return 잔액조회응답
@@ -59,6 +93,23 @@ public class PointController {
     @GetMapping("/members/{memberId}/points/balance")
     public ResponseEntity<BalanceResponse> getBalance(@PathVariable String memberId) {
         BalanceResponse response = pointFacadeService.getBalance(memberId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * <b>주문번호 기반 포인트 거래 조회</b>
+     * @param memberId 회원아이디
+     * @param orderNo 클라이언트 주문번호
+     * @param txType 거래 유형 optional
+     * @return 주문번호 기반 거래조회응답
+     */
+    @GetMapping("/members/{memberId}/points/transactions/by-order")
+    public ResponseEntity<TransactionLookupResponse> getTransactionByOrder(
+            @PathVariable String memberId,
+            @RequestParam String orderNo,
+            @RequestParam(required = false) TxType txType
+    ) {
+        TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, txType);
         return ResponseEntity.ok(response);
     }
 }
