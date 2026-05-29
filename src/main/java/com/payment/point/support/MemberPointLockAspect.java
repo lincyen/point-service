@@ -27,12 +27,12 @@ public class MemberPointLockAspect {
      * {@link MemberPointLocked}가 선언된 메서드에 회원 단위 락을 적용한다.
      *
      * @param joinPoint 대상 메서드 join point
-     * @param memberId 회원 식별자
      * @return 대상 메서드 실행 결과
      * @throws Throwable 대상 메서드 또는 락 처리 중 발생한 예외
      */
-    @Around("@annotation(com.payment.point.support.MemberPointLocked) && args(memberId,..)")
-    public Object lock(ProceedingJoinPoint joinPoint, String memberId) throws Throwable {
+    @Around("@annotation(com.payment.point.support.MemberPointLocked)")
+    public Object lock(ProceedingJoinPoint joinPoint) throws Throwable {
+        String memberId = (String) joinPoint.getArgs()[0];
         try (MemberPointLock.LockHandle ignored = memberPointLock.acquire(memberId)) {
             return joinPoint.proceed();
         }
