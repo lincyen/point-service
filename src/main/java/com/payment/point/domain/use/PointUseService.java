@@ -5,27 +5,18 @@ import com.payment.point.support.ErrorCode;
 import com.payment.point.support.PointIdGenerator;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@AllArgsConstructor
 public class PointUseService {
 
     private final PntUseMstRepository pntUseMstRepository;
     private final PntUseAllocRepository pntUseAllocRepository;
     private final PntUseCancelHistRepository pntUseCancelHistRepository;
     private final PointIdGenerator pointIdGenerator;
-
-    public PointUseService(
-            PntUseMstRepository pntUseMstRepository,
-            PntUseAllocRepository pntUseAllocRepository,
-            PntUseCancelHistRepository pntUseCancelHistRepository,
-            PointIdGenerator pointIdGenerator
-    ) {
-        this.pntUseMstRepository = pntUseMstRepository;
-        this.pntUseAllocRepository = pntUseAllocRepository;
-        this.pntUseCancelHistRepository = pntUseCancelHistRepository;
-        this.pointIdGenerator = pointIdGenerator;
-    }
 
     public PntUseAlloc createAllocation(String usePtxno, String earnPtxno, String memberId, int priority,
             long consumeAmount, LocalDateTime expireAt) {

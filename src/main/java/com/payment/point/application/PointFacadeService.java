@@ -27,6 +27,7 @@ import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import com.payment.point.support.MemberPointLocked;
 import com.payment.point.support.PointIdGenerator;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -128,10 +129,13 @@ public class PointFacadeService {
     }
 
     /**
-     * 포인트 사용을 처리한다.
-     *
-     * <p>동일 회원 요청 락은 AOP로 적용되고, 본 메서드는 단일 DB 트랜잭션 안에서
-     * 잔액 검증, 적립 원장 차감, 사용 원장 생성, 사용 Allocation 생성, 거래 이력 생성을 수행한다.</p>
+     * <b>포인트 사용 요청</b>
+     * <pre>
+     *     1. 금액 양수 체크, 주문번호 중복체크
+     *     2. 회원 잔액을 MANUAL 우선으로 차감
+     *     3. 적립 원장 차감 및 사용 Allocation 생성
+     *     4. 사용 원장 및 거래 이력 등록
+     * </pre>
      *
      * @param memberId 회원아이디
      * @param request 사용 요청
@@ -144,45 +148,65 @@ public class PointFacadeService {
         pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
 
         LocalDateTime now = LocalDateTime.now();
+
+        PntMemberBal balance = usePointBalance(memberId, request.amount());
+        String pointTransactionNo = pointIdGenerator.generatePointTransactionNo();
+        organizeUseLedger(pointTransactionNo, memberId, request.amount(), now);
+
+        pointUseService.createUse(pointTransactionNo, memberId, request.orderNo(), request.amount());
+        pointTransactionService.appendUseTransaction(
+                pointTransactionNo,
+                memberId,
+                request.orderNo(),
+                request.orderDtm(),
+                request.amount(),
+                balance.getTotalAmount()
+        );
+
+        return new UseResponse(pointTransactionNo, memberId, request.amount(), balance.getTotalAmount());
+    }
+
+    /**
+     * <b>회원 잔액 사용 처리</b>
+     * <pre>
+     *     회원 잔액을 조회한 뒤 사용 정책에 따라 MANUAL 우선으로 차감
+     * </pre>
+     *
+     * @param memberId 회원아이디
+     * @param useAmount 사용 금액
+     * @return 차감 후 회원 잔액
+     */
+    private PntMemberBal usePointBalance(String memberId, long useAmount) {
         PntMemberBal balance = pointBalanceService.findBalance(memberId);
-        if (balance.getTotalAmount() < request.amount()) {
-            throw new ApiException(ErrorCode.NOT_ENOUGH_POINT);
-        }
+        pointBalanceService.decreaseUseBalance(balance, useAmount);
+        return balance;
+    }
 
-        List<PntEarnMst> earns = pointEarnService.findUsableEarns(memberId, now);
-        long remainingUseAmount = request.amount();
-        String ptxno = pointIdGenerator.generatePointTransactionNo();
+    /**
+     * <b>사용 원장 정리</b>
+     * <pre>
+     *    사용 우선순위에 따라 적립 원장을 차감하고, 적립 원장별 사용 Allocation을 생성
+     * </pre>
+     *
+     * @param pointTransactionNo 사용 거래번호
+     * @param memberId 회원아이디
+     * @param useAmount 사용 금액
+     * @param baseDtm 사용 가능 적립 원장 판단 기준 시각
+     */
+    private void organizeUseLedger(String pointTransactionNo, String memberId, long useAmount, LocalDateTime baseDtm) {
+        List<PntEarnMst> earns = pointEarnService.findUsableEarns(memberId, baseDtm);
+        long remainingUseAmount = useAmount;
         int priority = 1;
-
         for (PntEarnMst earn : earns) {
-            if (remainingUseAmount == 0) {
-                break;
-            }
-
+            if (remainingUseAmount == 0) break;
             long consumeAmount = Math.min(earn.getRemainingAmount(), remainingUseAmount);
             earn.use(consumeAmount);
-            pointBalanceService.decreaseBalance(balance, earn.getEarnType(), consumeAmount);
 
-            pointUseService.createAllocation(
-                    ptxno,
-                    earn.getPtxno(),
-                    memberId,
-                    priority++,
-                    consumeAmount,
-                    earn.getExpireAt()
-            );
+            pointUseService.createAllocation(pointTransactionNo, earn.getPtxno(), memberId, priority++, consumeAmount, earn.getExpireAt());
             remainingUseAmount -= consumeAmount;
         }
 
-        if (remainingUseAmount > 0) {
-            throw new ApiException(ErrorCode.INCORRECT_POINT);
-        }
-
-        pointUseService.createUse(ptxno, memberId, request.orderNo(), request.amount());
-        pointTransactionService.appendTransaction(ptxno, ptxno, memberId, request.orderNo(), request.orderDtm(),
-                TxType.USE, request.amount(), balance.getTotalAmount(), null);
-
-        return new UseResponse(ptxno, memberId, request.amount(), balance.getTotalAmount());
+        if (remainingUseAmount > 0) throw new ApiException(ErrorCode.INCORRECT_POINT);
     }
 
     /**
@@ -205,9 +229,40 @@ public class PointFacadeService {
         PntMemberBal balance = pointBalanceService.findBalance(memberId);
         PntUseMst useMst = pointUseService.findUseForCancel(memberId, request.originalUsePtxno(), request.amount());
 
-        List<PntUseAlloc> allocations = pointUseService.findCancelableAllocations(useMst.getPtxno());
-        long remainingCancelAmount = request.amount();
         String useCancelPtxno = pointIdGenerator.generatePointTransactionNo();
+        restoreUseBalanceAndAllocation(useCancelPtxno, memberId, useMst, request.amount(), balance, now);
+
+        useMst.cancel(request.amount());
+        pointBalanceService.validateMaxBalance(balance);
+        pointTransactionService.appendUseCancelTransaction(
+                useCancelPtxno,
+                useMst.getPtxno(),
+                memberId,
+                request.orderNo(),
+                request.orderDtm(),
+                request.amount(),
+                balance.getTotalAmount()
+        );
+
+        return new UseCancelResponse(useCancelPtxno, memberId, request.amount(), balance.getTotalAmount());
+    }
+
+    /**
+     * <b>사용취소 잔액 및 Allocation 복원</b>
+     *
+     * <p>원 적립건이 만료되었으면 신규 RESTORE 적립으로 잔액을 복원하고, 만료 전이면 원 적립건을 복원한다.</p>
+     *
+     * @param useCancelPtxno 사용취소 거래번호
+     * @param memberId 회원아이디
+     * @param useMst 원 사용 원장
+     * @param cancelAmount 사용취소 금액
+     * @param balance 회원 잔액
+     * @param baseDtm 만료 여부 판단 기준 시각
+     */
+    private void restoreUseBalanceAndAllocation(String useCancelPtxno, String memberId, PntUseMst useMst,
+            long cancelAmount, PntMemberBal balance, LocalDateTime baseDtm) {
+        List<PntUseAlloc> allocations = pointUseService.findCancelableAllocations(useMst.getPtxno());
+        long remainingCancelAmount = cancelAmount;
         int cancelSequence = pointUseService.nextCancelSequence(useMst.getPtxno());
 
         for (PntUseAlloc allocation : allocations) {
@@ -215,22 +270,22 @@ public class PointFacadeService {
                 break;
             }
 
-            long cancelAmount = Math.min(allocation.getRemainingAmount(), remainingCancelAmount);
+            long allocationCancelAmount = Math.min(allocation.getRemainingAmount(), remainingCancelAmount);
             PntEarnMst originalEarn = pointEarnService.findOriginalEarn(allocation.getEarnPtxno());
 
             String restorePtxno = null;
             RestoreType restoreType;
-            if (originalEarn.isExpiredAt(now)) {
-                restorePtxno = pointEarnService.createRestoreEarn(memberId, cancelAmount, now);
-                balance.increaseNormal(cancelAmount);
+            if (originalEarn.isExpiredAt(baseDtm)) {
+                restorePtxno = pointEarnService.createRestoreEarn(memberId, allocationCancelAmount, baseDtm);
+                balance.increaseNormal(allocationCancelAmount);
                 restoreType = RestoreType.NEW_EARN;
             } else {
-                originalEarn.restoreUse(cancelAmount);
-                pointBalanceService.increaseBalance(balance, originalEarn.getEarnType(), cancelAmount);
+                originalEarn.restoreUse(allocationCancelAmount);
+                pointBalanceService.increaseBalance(balance, originalEarn.getEarnType(), allocationCancelAmount);
                 restoreType = RestoreType.ORIGINAL_RESTORE;
             }
 
-            allocation.cancel(cancelAmount);
+            allocation.cancel(allocationCancelAmount);
             pointUseService.saveCancelHistory(
                     useCancelPtxno,
                     useMst.getPtxno(),
@@ -240,22 +295,15 @@ public class PointFacadeService {
                     originalEarn.getPtxno(),
                     restorePtxno,
                     restoreType,
-                    cancelAmount
+                    allocationCancelAmount
             );
 
-            remainingCancelAmount -= cancelAmount;
+            remainingCancelAmount -= allocationCancelAmount;
         }
 
         if (remainingCancelAmount > 0) {
             throw new ApiException(ErrorCode.INCORRECT_POINT);
         }
-
-        useMst.cancel(request.amount());
-        pointBalanceService.validateMaxBalance(balance);
-        pointTransactionService.appendTransaction(useCancelPtxno, useMst.getPtxno(), memberId, request.orderNo(),
-                request.orderDtm(), TxType.USE_CNCL, request.amount(), balance.getTotalAmount(), null);
-
-        return new UseCancelResponse(useCancelPtxno, memberId, request.amount(), balance.getTotalAmount());
     }
 
     /**
@@ -284,8 +332,7 @@ public class PointFacadeService {
             earn.expireAll();
 
             String ptxno = pointIdGenerator.generatePointTransactionNo();
-            pointTransactionService.appendTransaction(ptxno, earn.getPtxno(), earn.getMemberId(), null, null,
-                    TxType.EXPIRE, expiredAmount, balance.getTotalAmount(), earn.getExpireAt());
+            pointTransactionService.appendExpireTransaction(ptxno, earn, expiredAmount, balance.getTotalAmount());
 
             expiredCount++;
             expiredAmountSum += expiredAmount;
@@ -297,11 +344,6 @@ public class PointFacadeService {
     @Transactional(readOnly = true)
     public BalanceResponse getBalance(String memberId) {
         return pointBalanceService.getBalance(memberId);
-    }
-
-    @Transactional(readOnly = true)
-    public HistoryResponse getHistories(String memberId) {
-        return pointTransactionService.getHistories(memberId);
     }
 
     @Transactional(readOnly = true)

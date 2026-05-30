@@ -43,34 +43,6 @@ public class PointTransactionService {
     }
 
     /**
-     * <b>거래 이력 저장</b>
-     *
-     * @param pointTransactionNo 포인트 거래번호
-     * @param originalPointTransactionNo 원 포인트 거래번호
-     * @param memberId 회원아이디
-     * @param orderNo 클라이언트 주문번호
-     * @param orderDtm 클라이언트 주문/요청 시각
-     * @param txType 거래 유형
-     * @param txAmount 거래 금액
-     * @param remainingAmount 거래 후 회원 총 잔액
-     * @param expireAt 거래 당시 만료일 스냅샷
-     */
-    public void appendTransaction(String pointTransactionNo, String originalPointTransactionNo, String memberId, String orderNo,
-            LocalDateTime orderDtm, TxType txType, long txAmount, long remainingAmount, LocalDateTime expireAt) {
-        pntTrHistRepository.save(new PntTrHist(
-                pointTransactionNo,
-                originalPointTransactionNo,
-                memberId,
-                orderNo,
-                orderDtm == null ? LocalDateTime.now() : orderDtm,
-                txType,
-                txAmount,
-                remainingAmount,
-                expireAt
-        ));
-    }
-
-    /**
      * <b>적립 거래 이력 저장</b>
      *
      * @param earnMst {@link PntEarnMst 적립 원장}
@@ -79,17 +51,17 @@ public class PointTransactionService {
      * @param remainingAmount 거래 후 회원 총 잔액
      */
     public void appendEarnTransaction(PntEarnMst earnMst, String orderNo, LocalDateTime orderDtm, long remainingAmount) {
-        pntTrHistRepository.save(new PntTrHist(
+        appendTransaction(
                 earnMst.getPtxno(),
                 earnMst.getPtxno(),
                 earnMst.getMemberId(),
                 orderNo,
-                orderDtm == null ? LocalDateTime.now() : orderDtm,
+                orderDtm,
                 TxType.EARN,
                 earnMst.getEarnAmount(),
                 remainingAmount,
                 earnMst.getExpireAt()
-        ));
+        );
     }
 
     /**
@@ -102,16 +74,116 @@ public class PointTransactionService {
      * @param remainingAmount 거래 후 회원 총 잔액
      */
     public void appendEarnCancelTransaction(String pointTransactionNo, PntEarnMst earnMst, String orderNo, LocalDateTime orderDtm, long remainingAmount) {
-        pntTrHistRepository.save(new PntTrHist(
+        appendTransaction(
                 pointTransactionNo,
                 earnMst.getPtxno(),
                 earnMst.getMemberId(),
                 orderNo,
-                orderDtm == null ? LocalDateTime.now() : orderDtm,
+                orderDtm,
                 TxType.EARN_CNCL,
                 earnMst.getEarnCancelAmount(),
                 remainingAmount,
                 null
+        );
+    }
+
+    /**
+     * <b>사용 거래 이력 저장</b>
+     *
+     * @param pointTransactionNo 사용 거래번호
+     * @param memberId 회원아이디
+     * @param orderNo 클라이언트 주문번호
+     * @param orderDtm 클라이언트 주문/요청 시각
+     * @param useAmount 사용 금액
+     * @param remainingAmount 거래 후 회원 총 잔액
+     */
+    public void appendUseTransaction(String pointTransactionNo, String memberId, String orderNo,
+            LocalDateTime orderDtm, long useAmount, long remainingAmount) {
+        appendTransaction(
+                pointTransactionNo,
+                pointTransactionNo,
+                memberId,
+                orderNo,
+                orderDtm,
+                TxType.USE,
+                useAmount,
+                remainingAmount,
+                null
+        );
+    }
+
+    /**
+     * <b>사용취소 거래 이력 저장</b>
+     *
+     * @param useCancelPtxno 사용취소 거래번호
+     * @param originalUsePtxno 원 사용 거래번호
+     * @param memberId 회원아이디
+     * @param orderNo 클라이언트 주문번호
+     * @param orderDtm 클라이언트 주문/요청 시각
+     * @param cancelAmount 사용취소 금액
+     * @param remainingAmount 거래 후 회원 총 잔액
+     */
+    public void appendUseCancelTransaction(String useCancelPtxno, String originalUsePtxno, String memberId,
+            String orderNo, LocalDateTime orderDtm, long cancelAmount, long remainingAmount) {
+        appendTransaction(
+                useCancelPtxno,
+                originalUsePtxno,
+                memberId,
+                orderNo,
+                orderDtm,
+                TxType.USE_CNCL,
+                cancelAmount,
+                remainingAmount,
+                null
+        );
+    }
+
+    /**
+     * <b>만료 거래 이력 저장</b>
+     *
+     * @param pointTransactionNo 만료 거래번호
+     * @param earnMst 만료 처리된 적립 원장
+     * @param expiredAmount 만료 금액
+     * @param remainingAmount 거래 후 회원 총 잔액
+     */
+    public void appendExpireTransaction(String pointTransactionNo, PntEarnMst earnMst, long expiredAmount, long remainingAmount) {
+        appendTransaction(
+                pointTransactionNo,
+                earnMst.getPtxno(),
+                earnMst.getMemberId(),
+                null,
+                LocalDateTime.now(),
+                TxType.EXPIRE,
+                expiredAmount,
+                remainingAmount,
+                earnMst.getExpireAt()
+        );
+    }
+
+    /**
+     * <b>거래 이력 저장</b>
+     * @param pointTransactionNo 거래번호
+     * @param originalPointTransactionNo 원 거래번호
+     * @param memberId 회원아이디
+     * @param orderNo 클라이언트 주문번호
+     * @param orderDtm 클라이언트 주문/요청 시각
+     * @param txType 거래 유형
+     * @param txAmount 거래 금액
+     * @param remainingAmount 거래 후 총 잔액
+     * @param expireAt 거래 당시 만료일
+     */
+    private void appendTransaction(String pointTransactionNo, String originalPointTransactionNo, String memberId, String orderNo,
+            LocalDateTime orderDtm, TxType txType, long txAmount, long remainingAmount, LocalDateTime expireAt) {
+        pntTrHistRepository.save(new PntTrHist(
+                pointTransactionNo,
+                originalPointTransactionNo,
+                memberId,
+                orderNo,
+                orderDtm == null ? LocalDateTime.now() : orderDtm,
+                txType,
+                txAmount,
+                remainingAmount,
+                expireAt
         ));
     }
 

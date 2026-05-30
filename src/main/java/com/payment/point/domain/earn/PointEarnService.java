@@ -143,7 +143,7 @@ public class PointEarnService {
     }
 
     /**
-     * 사용 가능한 적립 원장을 사용 우선순위대로 조회한다.
+     * <b>사용 가능 적립 거래 조회</b>
      *
      * @param memberId 회원아이디
      * @param baseDtm 사용 가능 여부 판단 기준 시각

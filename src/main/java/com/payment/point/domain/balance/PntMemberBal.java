@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PntMemberBal {
 
-    /** 회원 식별자 (UUID 하이픈 제거 문자열) */
+    /** 회원아이디 (UUID 하이픈 제거 문자열) */
     @Id
     @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;
@@ -74,14 +74,26 @@ public class PntMemberBal {
         return normalAmount + manualAmount;
     }
 
+    /**
+     * <b>일반 적립 증가</b>
+     * @param amount 적립금액
+     */
     public void increaseNormal(long amount) {
         this.normalAmount += amount;
     }
 
+    /**
+     * <b>관리자 적립 증가</b>
+     * @param amount 적립금액
+     */
     public void increaseManual(long amount) {
         this.manualAmount += amount;
     }
 
+    /**
+     * <b>일반 적립 감소</b>
+     * @param amount 감소금액
+     */
     public void decreaseNormal(long amount) {
         if (this.normalAmount < amount) {
             throw new IllegalArgumentException("normal point balance is not enough");
@@ -89,6 +101,10 @@ public class PntMemberBal {
         this.normalAmount -= amount;
     }
 
+    /**
+     * <b>일반 적립 감소</b>
+     * @param amount 감소금액
+     */
     public void decreaseManual(long amount) {
         if (this.manualAmount < amount) {
             throw new IllegalArgumentException("manual point balance is not enough");

@@ -38,7 +38,7 @@ public class PntUseCancelHist {
     @Column(name = "USE_ALLOC_ID", length = 26, nullable = false)
     private String useAllocId;
 
-    /** 회원 식별자 */
+    /** 회원아이디 */
     @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;
 

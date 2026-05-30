@@ -27,7 +27,7 @@ public class PntUseMst {
     @Column(name = "PTXNO", length = 26, nullable = false)
     private String ptxno;
 
-    /** 회원 식별자 */
+    /** 회원아이디 */
     @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;
 
@@ -60,6 +60,13 @@ public class PntUseMst {
     @Column(name = "UPDATED_AT", nullable = false)
     private LocalDateTime updatedAt;
 
+    /**
+     * <b>사용 원장 등록</b>
+     * @param ptxno 사용 거래번호
+     * @param memberId
+     * @param orderNo
+     * @param useAmount
+     */
     public PntUseMst(String ptxno, String memberId, String orderNo, Long useAmount) {
         this.ptxno = ptxno;
         this.memberId = memberId;

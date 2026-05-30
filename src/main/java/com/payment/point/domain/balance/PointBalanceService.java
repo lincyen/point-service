@@ -106,6 +106,33 @@ public class PointBalanceService {
     }
 
     /**
+     * <b>사용 요청 잔액 차감</b>
+     * <pre>
+     *     사용 정책에 따라 관리자 수기 지급 포인트를 먼저 차감하고, 부족분은 일반 포인트에서 차감한다.
+     * </pre>
+     *
+     * @param balance 회원 잔액
+     * @param amount 사용 금액
+     */
+    public void decreaseUseBalance(PntMemberBal balance, long amount) {
+        if (balance.getTotalAmount() < amount) throw new ApiException(ErrorCode.NOT_ENOUGH_POINT);
+
+        long manualUseAmount = Math.min(balance.getManualAmount(), amount);
+        long normalUseAmount = amount - manualUseAmount;
+
+        try {
+            if (manualUseAmount > 0) {
+                balance.decreaseManual(manualUseAmount);
+            }
+            if (normalUseAmount > 0) {
+                balance.decreaseNormal(normalUseAmount);
+            }
+        } catch (IllegalArgumentException exception) {
+            throw new ApiException(ErrorCode.INCORRECT_POINT);
+        }
+    }
+
+    /**
      * <b>최대 보유 가능 잔액 valid</b>
      *
      * @param balance 회원별 포인트 잔액

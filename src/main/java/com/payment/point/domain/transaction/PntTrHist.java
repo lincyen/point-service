@@ -30,7 +30,7 @@ public class PntTrHist {
     @Column(name = "OPTXNO", length = 26, nullable = false, updatable = false)
     private String optxno;
 
-    /** 회원 식별자 */
+    /** 회원아이디 */
     @Column(name = "MEMBER_ID", length = 32, nullable = false, updatable = false)
     private String memberId;
 

@@ -27,7 +27,7 @@ public class PntEarnMst {
     @Column(name = "PTXNO", length = 26, nullable = false)
     private String ptxno;
 
-    /** 회원 식별자 */
+    /** 회원아이디 */
     @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;
 
@@ -111,6 +111,10 @@ public class PntEarnMst {
         return !expireAt.isAfter(baseDtm);
     }
 
+    /**
+     * <b>포인트 사용</b>
+     * @param amount 사용금액
+     */
     public void use(long amount) {
         if (status != EarnStatus.ACTIVE || remainingAmount < amount) {
             throw new IllegalArgumentException("earn point is not usable");

@@ -33,7 +33,7 @@ public class PntUseAlloc {
     @Column(name = "EARN_PTXNO", length = 26, nullable = false)
     private String earnPtxno;
 
-    /** 회원 식별자 */
+    /** 회원아이디 */
     @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;
 
