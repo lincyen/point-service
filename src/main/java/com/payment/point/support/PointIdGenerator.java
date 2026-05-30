@@ -26,11 +26,11 @@ public class PointIdGenerator {
     }
 
     /**
-     * 포인트 거래번호를 생성한다.
+     * <b>포인트 거래번호 생성</b>
      *
      * @return {@code POINT.SEQ_PTXNO} 기반의 26자리 숫자 문자열
      */
-    public String generatePtxno() {
+    public String generatePointTransactionNo() {
         return generate(PTXNO_SEQUENCE_SQL);
     }
 

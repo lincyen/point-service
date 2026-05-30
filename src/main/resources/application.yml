@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: "jdbc:h2:mem:point;MODE=Oracle;INIT=CREATE SCHEMA IF NOT EXISTS POINT"
+    url: "jdbc:h2:mem:point;INIT=CREATE SCHEMA IF NOT EXISTS POINT"
     driver-class-name: org.h2.Driver
     username: sa
     password: ""

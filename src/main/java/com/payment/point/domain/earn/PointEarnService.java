@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,29 +18,21 @@ import org.springframework.stereotype.Service;
  * <p>적립 정책 검증, 적립 원장 생성/조회, 만료 대상 조회, 사용취소 시 RESTORE 적립 생성을 담당한다.</p>
  */
 @Service
+@AllArgsConstructor
 public class PointEarnService {
-
     private final PntEarnMstRepository pntEarnMstRepository;
     private final PointPolicyProperties pointPolicyProperties;
     private final PointIdGenerator pointIdGenerator;
 
-    public PointEarnService(
-            PntEarnMstRepository pntEarnMstRepository,
-            PointPolicyProperties pointPolicyProperties,
-            PointIdGenerator pointIdGenerator
-    ) {
-        this.pntEarnMstRepository = pntEarnMstRepository;
-        this.pointPolicyProperties = pointPolicyProperties;
-        this.pointIdGenerator = pointIdGenerator;
-    }
-
     /**
-     * 적립 금액이 정책상 허용 범위에 있는지 검증한다.
+     * <b>1회 적립 요청 금액 valid</b>
+     * <pre>
+     *     적립 요청 금액은 정책 상 1회 최소/최대 한도 제한이 존재
+     * </pre>
      *
-     * @param amount 적립 금액
+     * @param amount 금액
      */
     public void validateAmountPolicy(long amount) {
-        validatePositive(amount);
         PointPolicyProperties.Earn earnPolicy = pointPolicyProperties.earn();
         if (amount < earnPolicy.minAmount() || amount > earnPolicy.maxAmount()) {
             throw new ApiException(ErrorCode.INVALID_PARAMETER);
@@ -46,9 +40,12 @@ public class PointEarnService {
     }
 
     /**
-     * 금액이 양수인지 검증한다.
+     * <b>양수 금액 valid</b>
+     * <pre>
+     *     모든 요청은 양수로 처리하며, 적립/적립취소/사용/사용취소에 따라 연산이 정해진다
+     * </pre>
      *
-     * @param amount 검증 대상 금액
+     * @param amount 금액
      */
     public void validatePositive(long amount) {
         if (amount <= 0) {
@@ -57,10 +54,25 @@ public class PointEarnService {
     }
 
     /**
-     * 요청 만료 기간과 적립 정책을 기준으로 실제 만료일시를 계산한다.
+     * 외부 적립 요청에서 허용되는 적립 유형인지 검증한다.
+     *
+     * @param earnType 적립 유형
+     */
+    public void validateRequestEarnType(EarnType earnType) {
+        if (earnType == null || earnType == EarnType.RESTORE) {
+            throw new ApiException(ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
+    /**
+     * <b>만료일 계산</b>
+     * <pre>
+     *     요청 만료일과 처리 기준 시간을 기준으로 현재시간에서 만료일을 더한 LocalDataTime 을 계산
+     *     정책 상 최소/최대 만료일에서 벗어나는 경우 Exception 처리
+     * </pre>
      *
      * @param requestedExpirePeriod ISO-8601 period 형식의 요청 만료 기간
-     * @param now 적립 처리 기준 시각
+     * @param now 처리 기준 시각
      * @return 계산된 포인트 만료일시
      */
     public LocalDateTime resolveExpireAt(String requestedExpirePeriod, LocalDateTime now) {
@@ -79,40 +91,46 @@ public class PointEarnService {
     }
 
     /**
-     * 신규 적립 원장을 생성한다.
+     * <b>신규 적립 수행</b>
      *
-     * @param ptxno 적립 거래번호
-     * @param memberId 회원 식별자
+     * @param pointTransactionNo 적립 거래번호
+     * @param memberId 회원아이디
      * @param earnType 적립 유형
      * @param amount 적립 금액
      * @param expireAt 만료일시
      * @return 저장된 적립 원장
      */
-    public PntEarnMst createEarn(String ptxno, String memberId, EarnType earnType, long amount,
+    public PntEarnMst createEarn(String pointTransactionNo, String memberId, EarnType earnType, long amount,
             LocalDateTime expireAt) {
-        PntEarnMst earn = new PntEarnMst(ptxno, memberId, earnType, amount, expireAt);
+        PntEarnMst earn = new PntEarnMst(pointTransactionNo, memberId, earnType, amount, expireAt);
         return pntEarnMstRepository.save(earn);
     }
 
     /**
-     * 적립취소 가능한 원 적립 원장을 조회하고 취소 가능 여부를 검증한다.
+     * <b>적립취소 가능 여부 조회</b>
+     * <pre>
+     *     거래정보가 존재하지 않으면 NO_POINT_HISTORY
+     *     사용포인트가 존재하면 INCORRECT_POINT
+     *     적립 상태가 취소이면 ALREADY_CANCELED
+     *     기준일 기준 만료일을 지났거나, 만료 금액이 있거나, 적립상태가 만료이면 EXPIRED_POINT
+     *     요청금액과 잔액이 다르면 PARTIAL_CANCEL_FAIL
+     * </pre>
      *
-     * @param memberId 회원 식별자
-     * @param originalPtxno 원 적립 거래번호
+     * @param memberId 회원아이디
+     * @param pointTransactionNo 적립 거래번호
      * @param requestAmount 요청 적립취소 금액
      * @param baseDtm 만료 여부 판단 기준 시각
      * @return 적립취소 대상 원장
      */
-    public PntEarnMst findEarnForCancel(String memberId, String originalPtxno, long requestAmount,
-            LocalDateTime baseDtm) {
-        PntEarnMst earn = pntEarnMstRepository.findById(originalPtxno)
+    public PntEarnMst findEarnForCancel(String memberId, String pointTransactionNo, long requestAmount, LocalDateTime baseDtm) {
+        PntEarnMst earn = pntEarnMstRepository.findById(pointTransactionNo)
                 .filter(value -> value.getMemberId().equals(memberId))
                 .orElseThrow(() -> new ApiException(ErrorCode.NO_POINT_HISTORY));
 
         if (earn.getUseAmount() > 0) {
             throw new ApiException(ErrorCode.INCORRECT_POINT);
         }
-        if (earn.getCancelAmount() > 0) {
+        if (earn.getStatus() == EarnStatus.CNCL) {
             throw new ApiException(ErrorCode.ALREADY_CANCELED);
         }
         if (earn.isExpiredAt(baseDtm) || earn.getExpiredAmount() > 0 || earn.getStatus() == EarnStatus.EXPIRED) {
@@ -127,7 +145,7 @@ public class PointEarnService {
     /**
      * 사용 가능한 적립 원장을 사용 우선순위대로 조회한다.
      *
-     * @param memberId 회원 식별자
+     * @param memberId 회원아이디
      * @param baseDtm 사용 가능 여부 판단 기준 시각
      * @return 사용 가능한 적립 원장 목록
      */
@@ -146,6 +164,17 @@ public class PointEarnService {
     }
 
     /**
+     * 회원별 만료 처리 대상 적립 원장을 조회한다.
+     *
+     * @param memberId 회원아이디
+     * @param baseDtm 만료 기준 시각
+     * @return 회원별 만료 대상 적립 원장 목록
+     */
+    public List<PntEarnMst> findExpirableEarns(String memberId, LocalDateTime baseDtm) {
+        return pntEarnMstRepository.findExpirableEarns(memberId, baseDtm);
+    }
+
+    /**
      * 사용 Allocation에 연결된 원 적립 원장을 조회한다.
      *
      * @param earnPtxno 원 적립 거래번호
@@ -159,13 +188,13 @@ public class PointEarnService {
     /**
      * 만료된 원 적립건의 사용취소 금액을 신규 RESTORE 적립으로 생성한다.
      *
-     * @param memberId 회원 식별자
+     * @param memberId 회원아이디
      * @param amount 복원 금액
      * @param now RESTORE 적립 생성 기준 시각
      * @return 생성된 RESTORE 적립 거래번호
      */
     public String createRestoreEarn(String memberId, long amount, LocalDateTime now) {
-        String restorePtxno = pointIdGenerator.generatePtxno();
+        String restorePtxno = pointIdGenerator.generatePointTransactionNo();
         LocalDateTime restoreExpireAt = now.plus(parseExpirePeriod(pointPolicyProperties.earn().defaultExpirePeriod()));
         pntEarnMstRepository.save(new PntEarnMst(restorePtxno, memberId, EarnType.RESTORE, amount, restoreExpireAt));
         return restorePtxno;

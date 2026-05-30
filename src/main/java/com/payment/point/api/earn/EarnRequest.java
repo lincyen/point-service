@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 /**
- * 포인트 적립 요청 DTO.
+ * 포인트 적립 요청
  *
  * @param orderNo 클라이언트 주문번호
  * @param orderDtm 클라이언트 주문/요청 시각

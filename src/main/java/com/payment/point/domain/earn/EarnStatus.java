@@ -1,7 +1,7 @@
 package com.payment.point.domain.earn;
 
 /**
- * 적립 원장 상태.
+ * 적립 원장 상태
  */
 public enum EarnStatus {
     /** 사용 가능한 적립 원장 상태 */

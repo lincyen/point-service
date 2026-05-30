@@ -62,6 +62,17 @@ class EarnApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-외부 적립 요청의 RESTORE 유형은 INVALID_PARAMETER")
+    void earnRejectsRestoreEarnType() {
+        String memberId = memberId();
+        EarnRequest request = new EarnRequest(orderNo("EARN-API"), null, EarnType.RESTORE, 100, "P10D");
+
+        ApiException exception = assertThrows(ApiException.class, () -> pointFacadeService.earn(memberId, request));
+
+        assertEquals(ErrorCode.INVALID_PARAMETER, exception.getErrorCode());
+    }
+
+    @Test
     @DisplayName("성공-expirePeriod 미입력 시 P365D 기본 만료기간 적용")
     void earnUsesDefaultExpirePeriodWhenExpirePeriodIsNull() {
         String memberId = memberId();

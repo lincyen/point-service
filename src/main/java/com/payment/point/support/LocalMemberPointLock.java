@@ -25,7 +25,7 @@ public class LocalMemberPointLock implements MemberPointLock {
     /**현
      * 회원 단위 락을 획득한다.
      *
-     * @param memberId 회원 식별자
+     * @param memberId 회원아이디
      * @return 락 해제 handle
      */
     @Override

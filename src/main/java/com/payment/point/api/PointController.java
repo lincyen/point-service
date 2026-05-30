@@ -1,10 +1,13 @@
 package com.payment.point.api;
 
 import com.payment.point.api.balance.BalanceResponse;
+import com.payment.point.api.common.ExpireRequest;
+import com.payment.point.api.common.ExpireResponse;
 import com.payment.point.api.earn.EarnCancelRequest;
 import com.payment.point.api.earn.EarnCancelResponse;
 import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.earn.EarnResponse;
+import com.payment.point.api.history.HistoryResponse;
 import com.payment.point.api.history.TransactionLookupResponse;
 import com.payment.point.api.use.UseCancelRequest;
 import com.payment.point.api.use.UseCancelResponse;
@@ -12,11 +15,15 @@ import com.payment.point.api.use.UseRequest;
 import com.payment.point.api.use.UseResponse;
 import com.payment.point.application.PointFacadeService;
 import com.payment.point.domain.transaction.TxType;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/v1")
 @AllArgsConstructor
+@Validated
 public class PointController {
 
     private final PointFacadeService pointFacadeService;
@@ -50,10 +58,7 @@ public class PointController {
      * @return 적립취소응답
      */
     @PostMapping("/members/{memberId}/points/earn-cancel")
-    public ResponseEntity<EarnCancelResponse> earnCancel(
-            @PathVariable String memberId,
-            @Valid @RequestBody EarnCancelRequest request
-    ) {
+    public ResponseEntity<EarnCancelResponse> earnCancel(@PathVariable String memberId, @Valid @RequestBody EarnCancelRequest request) {
         EarnCancelResponse response = pointFacadeService.earnCancel(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -77,12 +82,21 @@ public class PointController {
      * @return 사용취소응답
      */
     @PostMapping("/members/{memberId}/points/use-cancel")
-    public ResponseEntity<UseCancelResponse> useCancel(
-            @PathVariable String memberId,
-            @Valid @RequestBody UseCancelRequest request
-    ) {
+    public ResponseEntity<UseCancelResponse> useCancel(@PathVariable String memberId, @Valid @RequestBody UseCancelRequest request) {
         UseCancelResponse response = pointFacadeService.cancelUse(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * <b>포인트 만료</b>
+     * @param memberId 회원아이디
+     * @param request {@link ExpireRequest 만료 요청}
+     * @return 만료응답
+     */
+    @PostMapping("/members/{memberId}/points/expire")
+    public ResponseEntity<ExpireResponse> expire(@PathVariable String memberId, @RequestBody ExpireRequest request) {
+        ExpireResponse response = pointFacadeService.expire(memberId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -97,6 +111,20 @@ public class PointController {
     }
 
     /**
+     * <b>포인트 거래 이력 조회</b>
+     * @param memberId 회원아이디
+     * @return 거래이력조회응답
+     */
+    @GetMapping("/members/{memberId}/points/histories")
+    public ResponseEntity<HistoryResponse> getHistories(@PathVariable String memberId,
+                                                        @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                                        @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                                        @RequestParam(required = false) TxType txType) {
+        HistoryResponse response = pointFacadeService.getHistories(memberId, startDate, endDate, txType);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * <b>주문번호 기반 포인트 거래 조회</b>
      * @param memberId 회원아이디
      * @param orderNo 클라이언트 주문번호
@@ -104,11 +132,9 @@ public class PointController {
      * @return 주문번호 기반 거래조회응답
      */
     @GetMapping("/members/{memberId}/points/transactions/by-order")
-    public ResponseEntity<TransactionLookupResponse> getTransactionByOrder(
-            @PathVariable String memberId,
-            @RequestParam String orderNo,
-            @RequestParam(required = false) TxType txType
-    ) {
+    public ResponseEntity<TransactionLookupResponse> getTransactionByOrder(@PathVariable String memberId,
+                                                                           @RequestParam String orderNo,
+                                                                           @RequestParam(required = false) TxType txType) {
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, txType);
         return ResponseEntity.ok(response);
     }

@@ -49,8 +49,8 @@ public class PntEarnMst {
     private Long useAmount;
 
     /** 적립취소 금액 */
-    @Column(name = "CNCL_AMT", nullable = false)
-    private Long cancelAmount;
+    @Column(name = "EARN_CNCL_AMT", nullable = false)
+    private Long earnCancelAmount;
 
     /** 만료 금액 */
     @Column(name = "EXPIRED_AMT", nullable = false)
@@ -84,7 +84,7 @@ public class PntEarnMst {
         this.earnAmount = earnAmount;
         this.remainingAmount = earnAmount;
         this.useAmount = 0L;
-        this.cancelAmount = 0L;
+        this.earnCancelAmount = 0L;
         this.expiredAmount = 0L;
         this.firstExpireAt = expireAt;
         this.expireAt = expireAt;
@@ -122,11 +122,14 @@ public class PntEarnMst {
         }
     }
 
+    /**
+     * <b>적립취소 설정</b>
+     */
     public void cancelEarn() {
         if (useAmount > 0 || status == EarnStatus.CNCL) {
             throw new IllegalArgumentException("earn point cannot be canceled");
         }
-        this.cancelAmount = earnAmount;
+        this.earnCancelAmount = earnAmount;
         this.remainingAmount = 0L;
         this.status = EarnStatus.CNCL;
     }

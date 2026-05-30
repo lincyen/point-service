@@ -33,4 +33,18 @@ public interface PntEarnMstRepository extends JpaRepository<PntEarnMst, String> 
             order by e.memberId asc, e.expireAt asc, e.createdAt asc
             """)
     List<PntEarnMst> findExpirableEarns(@Param("baseDtm") LocalDateTime baseDtm);
+
+    @Query("""
+            select e
+            from PntEarnMst e
+            where e.memberId = :memberId
+              and e.status = com.payment.point.domain.earn.EarnStatus.ACTIVE
+              and e.remainingAmount > 0
+              and e.expireAt <= :baseDtm
+            order by e.expireAt asc, e.createdAt asc
+            """)
+    List<PntEarnMst> findExpirableEarns(
+            @Param("memberId") String memberId,
+            @Param("baseDtm") LocalDateTime baseDtm
+    );
 }
