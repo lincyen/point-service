@@ -1,4 +1,4 @@
-가package com.payment.point.api;
+package com.payment.point.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
