@@ -1,6 +1,7 @@
 package com.payment.point.api.history;
 
 import com.payment.point.domain.transaction.TxType;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,7 +26,7 @@ public record HistoryResponse(
      * @param txType 거래 유형
      * @param amount 거래 금액
      * @param remainingAmount 거래 후 회원 총 잔액
-     * @param expireAt 거래 당시 만료일 스냅샷
+     * @param expireDate 거래 당시 만료일 스냅샷
      * @param createdAt 서버 생성 시각
      */
     public record Item(
@@ -36,7 +37,7 @@ public record HistoryResponse(
             TxType txType,
             long amount,
             long remainingAmount,
-            LocalDateTime expireAt,
+            LocalDate expireDate,
             LocalDateTime createdAt
     ) {
     }

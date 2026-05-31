@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -58,11 +59,11 @@ public class PntEarnMst {
 
     /** 최초 부여 만료일 */
     @Column(name = "FIRST_EXP_DT", nullable = false)
-    private LocalDateTime firstExpireAt;
+    private LocalDate firstExpireDate;
 
     /** 현재 유효 만료일 */
     @Column(name = "EXP_DT", nullable = false)
-    private LocalDateTime expireAt;
+    private LocalDate expireDate;
 
     /** 현재 상태 */
     @Enumerated(EnumType.STRING)
@@ -77,7 +78,7 @@ public class PntEarnMst {
     @Column(name = "UPDATED_AT", nullable = false)
     private LocalDateTime updatedAt;
 
-    public PntEarnMst(String ptxno, String memberId, EarnType earnType, Long earnAmount, LocalDateTime expireAt) {
+    public PntEarnMst(String ptxno, String memberId, EarnType earnType, Long earnAmount, LocalDate expireDate) {
         this.ptxno = ptxno;
         this.memberId = memberId;
         this.earnType = earnType;
@@ -86,8 +87,8 @@ public class PntEarnMst {
         this.useAmount = 0L;
         this.earnCancelAmount = 0L;
         this.expiredAmount = 0L;
-        this.firstExpireAt = expireAt;
-        this.expireAt = expireAt;
+        this.firstExpireDate = expireDate;
+        this.expireDate = expireDate;
         this.status = EarnStatus.ACTIVE;
     }
 
@@ -107,8 +108,8 @@ public class PntEarnMst {
         return earnType == EarnType.MANUAL;
     }
 
-    public boolean isExpiredAt(LocalDateTime baseDtm) {
-        return !expireAt.isAfter(baseDtm);
+    public boolean isExpiredOn(LocalDate baseDate) {
+        return !expireDate.isAfter(baseDate);
     }
 
     /**

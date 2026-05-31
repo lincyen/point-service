@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -55,7 +56,7 @@ public class PntUseAlloc {
 
     /** 사용 당시 적립건 만료일 */
     @Column(name = "EXP_DT", nullable = false)
-    private LocalDateTime expireAt;
+    private LocalDate expireDate;
 
     /** 생성일시 */
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
@@ -66,7 +67,7 @@ public class PntUseAlloc {
     private LocalDateTime updatedAt;
 
     public PntUseAlloc(String useAllocId, String ptxno, String earnPtxno, String memberId, Integer priority,
-            Long consumeAmount, LocalDateTime expireAt) {
+            Long consumeAmount, LocalDate expireDate) {
         this.useAllocId = useAllocId;
         this.ptxno = ptxno;
         this.earnPtxno = earnPtxno;
@@ -75,7 +76,7 @@ public class PntUseAlloc {
         this.consumeAmount = consumeAmount;
         this.cancelAmount = 0L;
         this.remainingAmount = consumeAmount;
-        this.expireAt = expireAt;
+        this.expireDate = expireDate;
     }
 
     @PrePersist

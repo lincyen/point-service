@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -57,14 +58,14 @@ public class PntTrHist {
 
     /** 거래 당시 만료일 스냅샷 */
     @Column(name = "EXP_DT", updatable = false)
-    private LocalDateTime expireAt;
+    private LocalDate expireDate;
 
     /** 서버 생성 시각 */
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public PntTrHist(String ptxno, String optxno, String memberId, String orderNo, LocalDateTime orderDtm,
-            TxType txType, Long txAmount, Long remainingAmount, LocalDateTime expireAt) {
+            TxType txType, Long txAmount, Long remainingAmount, LocalDate expireDate) {
         this.ptxno = ptxno;
         this.optxno = optxno;
         this.memberId = memberId;
@@ -73,7 +74,7 @@ public class PntTrHist {
         this.txType = txType;
         this.txAmount = txAmount;
         this.remainingAmount = remainingAmount;
-        this.expireAt = expireAt;
+        this.expireDate = expireDate;
     }
 
     @PrePersist

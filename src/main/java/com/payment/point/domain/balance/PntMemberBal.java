@@ -7,6 +7,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -37,6 +38,10 @@ public class PntMemberBal {
     /** 누적 만료 포인트 금액 */
     @Column(name = "EXPIRED_AMT", nullable = false)
     private Long expiredAmount;
+
+    /** 다음 만료 예정일 */
+    @Column(name = "NEXT_EXP_DT")
+    private LocalDate nextExpireDate;
 
     /** 낙관적 락 버전 */
     @Version
@@ -114,5 +119,13 @@ public class PntMemberBal {
 
     public void increaseExpired(long amount) {
         this.expiredAmount += amount;
+    }
+
+    public boolean isExpirationDueOn(LocalDate baseDate) {
+        return nextExpireDate != null && !nextExpireDate.isAfter(baseDate);
+    }
+
+    public void updateNextExpireDate(LocalDate nextExpireDate) {
+        this.nextExpireDate = nextExpireDate;
     }
 }
