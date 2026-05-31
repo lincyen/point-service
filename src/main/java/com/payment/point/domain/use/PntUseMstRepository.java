@@ -1,6 +1,5 @@
 package com.payment.point.domain.use;
 
-import java.util.List;
 import java.util.Optional;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
