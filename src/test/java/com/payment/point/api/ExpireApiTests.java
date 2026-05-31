@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.payment.point.api.expire.ExpireRequest;
 import com.payment.point.api.expire.ExpireResponse;
-import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.balance.BalanceResponse;
 import com.payment.point.domain.earn.EarnType;
 import java.time.LocalDate;
@@ -17,7 +16,7 @@ class ExpireApiTests extends PointApiTestSupport {
     @DisplayName("성공-적립 원장 잔액 만료 처리")
     void expireRemainingEarnPoints() {
         String memberId = memberId();
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo("EXPIRE-API-EARN"), null, EarnType.NORMAL, 300, "P2D"));
+        givenEarn(memberId, "EXPIRE-API-EARN", EarnType.NORMAL, 300, "P2D");
 
         ExpireResponse response = pointFacadeService.expire(memberId, new ExpireRequest(LocalDate.now().plusDays(3)));
 
@@ -35,8 +34,8 @@ class ExpireApiTests extends PointApiTestSupport {
     void expireProcessesOnlyRequestedMemberPoints() {
         String targetMemberId = memberId();
         String otherMemberId = memberId();
-        pointFacadeService.earn(targetMemberId, new EarnRequest(orderNo("EXPIRE-API-TARGET"), null, EarnType.NORMAL, 300, "P2D"));
-        pointFacadeService.earn(otherMemberId, new EarnRequest(orderNo("EXPIRE-API-OTHER"), null, EarnType.NORMAL, 500, "P2D"));
+        givenEarn(targetMemberId, "EXPIRE-API-TARGET", EarnType.NORMAL, 300, "P2D");
+        givenEarn(otherMemberId, "EXPIRE-API-OTHER", EarnType.NORMAL, 500, "P2D");
 
         ExpireResponse response = pointFacadeService.expire(targetMemberId, new ExpireRequest(LocalDate.now().plusDays(3)));
 

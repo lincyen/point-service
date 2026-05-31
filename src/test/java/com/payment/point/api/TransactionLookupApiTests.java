@@ -10,10 +10,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.earn.EarnResponse;
 import com.payment.point.api.history.TransactionLookupResponse;
-import com.payment.point.api.use.UseRequest;
 import com.payment.point.api.use.UseResponse;
 import com.payment.point.domain.earn.EarnType;
 import com.payment.point.domain.transaction.TxType;
@@ -36,10 +34,7 @@ class TransactionLookupApiTests extends PointApiTestSupport {
     void getTransactionByOrderReturnsEarnTransaction() {
         String memberId = memberId();
         String orderNo = orderNo("LOOKUP-EARN");
-        EarnResponse earnResponse = pointFacadeService.earn(
-                memberId,
-                new EarnRequest(orderNo, null, EarnType.NORMAL, 1_000, "P10D")
-        );
+        EarnResponse earnResponse = givenEarnByOrderNo(memberId, orderNo, EarnType.NORMAL, 1_000, "P10D");
 
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, null);
 
@@ -60,8 +55,8 @@ class TransactionLookupApiTests extends PointApiTestSupport {
         String memberId = memberId();
         String earnOrderNo = orderNo("LOOKUP-USE-EARN");
         String useOrderNo = orderNo("LOOKUP-USE");
-        pointFacadeService.earn(memberId, new EarnRequest(earnOrderNo, null, EarnType.NORMAL, 1_000, "P10D"));
-        UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(useOrderNo, null, 400));
+        givenEarnByOrderNo(memberId, earnOrderNo, EarnType.NORMAL, 1_000, "P10D");
+        UseResponse useResponse = givenUseByOrderNo(memberId, useOrderNo, 400);
 
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, useOrderNo, TxType.USE);
 
@@ -78,7 +73,7 @@ class TransactionLookupApiTests extends PointApiTestSupport {
     void getTransactionByOrderReturnsNotExistsWhenTxTypeDoesNotMatch() {
         String memberId = memberId();
         String orderNo = orderNo("LOOKUP-MISMATCH");
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo, null, EarnType.NORMAL, 1_000, "P10D"));
+        givenEarnByOrderNo(memberId, orderNo, EarnType.NORMAL, 1_000, "P10D");
 
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, TxType.USE);
 
@@ -93,8 +88,7 @@ class TransactionLookupApiTests extends PointApiTestSupport {
     @DisplayName("성공-유효 회원의 주문번호가 존재하지 않으면 존재하지 않음 응답")
     void getTransactionByOrderReturnsNotExistsWhenOrderDoesNotExist() {
         String memberId = memberId();
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo("LOOKUP-EXISTING-EARN"), null,
-                EarnType.NORMAL, 100, "P10D"));
+        givenEarn(memberId, "LOOKUP-EXISTING-EARN", EarnType.NORMAL, 100, "P10D");
         String orderNo = orderNo("LOOKUP-MISSING");
 
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, null);

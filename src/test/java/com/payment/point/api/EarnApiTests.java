@@ -97,10 +97,8 @@ class EarnApiTests extends PointApiTestSupport {
     @DisplayName("성공-더 빠른 만료일의 적립 생성 시 회원 다음 만료 예정일 갱신")
     void earnUpdatesMemberNextExpireDateWhenEarlierEarnIsCreated() {
         String memberId = memberId();
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo("EARN-NEXT-LATE"), null,
-                EarnType.NORMAL, 100, "P10D"));
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo("EARN-NEXT-EARLY"), null,
-                EarnType.NORMAL, 100, "P2D"));
+        givenEarn(memberId, "EARN-NEXT-LATE", EarnType.NORMAL, 100, "P10D");
+        givenEarn(memberId, "EARN-NEXT-EARLY", EarnType.NORMAL, 100, "P2D");
 
         PntMemberBal balance = pntMemberBalRepository.findById(memberId).orElseThrow();
 

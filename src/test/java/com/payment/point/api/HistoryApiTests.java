@@ -6,9 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.history.HistoryResponse;
-import com.payment.point.api.use.UseRequest;
 import com.payment.point.domain.earn.EarnType;
 import com.payment.point.domain.transaction.TxType;
 import com.payment.point.support.ApiException;
@@ -30,8 +28,7 @@ class HistoryApiTests extends PointApiTestSupport {
     @DisplayName("실패-유효 회원의 거래 이력 조회 결과 없음, NO_HISTORY_RESULT")
     void getHistoriesRejectsWhenResultIsEmpty() {
         String memberId = memberId();
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo("HISTORY-EMPTY-EARN"), null,
-                EarnType.NORMAL, 100, "P10D"));
+        givenEarn(memberId, "HISTORY-EMPTY-EARN", EarnType.NORMAL, 100, "P10D");
         LocalDate startDate = LocalDate.now().minusDays(3);
         LocalDate endDate = LocalDate.now().minusDays(2);
 
@@ -62,8 +59,8 @@ class HistoryApiTests extends PointApiTestSupport {
         LocalDate endDate = LocalDate.now().plusDays(1);
         String earnOrderNo = orderNo("HISTORY-EARN");
         String useOrderNo = orderNo("HISTORY-USE");
-        pointFacadeService.earn(memberId, new EarnRequest(earnOrderNo, null, EarnType.NORMAL, 1_000, "P10D"));
-        pointFacadeService.use(memberId, new UseRequest(useOrderNo, null, 400));
+        givenEarnByOrderNo(memberId, earnOrderNo, EarnType.NORMAL, 1_000, "P10D");
+        givenUseByOrderNo(memberId, useOrderNo, 400);
 
         HistoryResponse response = pointFacadeService.getHistories(memberId, startDate, endDate, null);
 
@@ -87,8 +84,8 @@ class HistoryApiTests extends PointApiTestSupport {
         LocalDate endDate = LocalDate.now().plusDays(1);
         String earnOrderNo = orderNo("HISTORY-FILTER-EARN");
         String useOrderNo = orderNo("HISTORY-FILTER-USE");
-        pointFacadeService.earn(memberId, new EarnRequest(earnOrderNo, null, EarnType.NORMAL, 1_000, "P10D"));
-        pointFacadeService.use(memberId, new UseRequest(useOrderNo, null, 400));
+        givenEarnByOrderNo(memberId, earnOrderNo, EarnType.NORMAL, 1_000, "P10D");
+        givenUseByOrderNo(memberId, useOrderNo, 400);
 
         HistoryResponse response = pointFacadeService.getHistories(memberId, startDate, endDate, TxType.USE);
 

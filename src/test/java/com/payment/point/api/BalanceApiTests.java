@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.payment.point.api.balance.BalanceResponse;
-import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.domain.earn.EarnType;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
@@ -37,10 +36,8 @@ class BalanceApiTests extends PointApiTestSupport {
     @DisplayName("성공-현재 잔액 조회")
     void getBalanceReturnsCurrentPointAmounts() {
         String memberId = memberId();
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo("BALANCE-EARN-NORMAL"), null,
-                EarnType.NORMAL, 300, "P10D"));
-        pointFacadeService.earn(memberId, new EarnRequest(orderNo("BALANCE-EARN-MANUAL"), null,
-                EarnType.MANUAL, 200, "P10D"));
+        givenEarn(memberId, "BALANCE-EARN-NORMAL", EarnType.NORMAL, 300, "P10D");
+        givenEarn(memberId, "BALANCE-EARN-MANUAL", EarnType.MANUAL, 200, "P10D");
 
         BalanceResponse response = pointFacadeService.getBalance(memberId);
 
