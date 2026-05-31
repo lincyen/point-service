@@ -221,11 +221,11 @@ class UseCancelApiTests extends PointApiTestSupport {
         assertEquals(1_000, restoreEarn.getRemainingAmount());
     }
 
-    private void expireEarn(String ptxno) {
+    private void expireEarn(String pointTransactionNo) {
         jdbcTemplate.update(
                 "update POINT.PNT_EARN_MST set EXP_DT = ? where PTXNO = ?",
                 LocalDate.now().minusDays(1),
-                ptxno
+                pointTransactionNo
         );
     }
 }

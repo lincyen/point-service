@@ -66,8 +66,8 @@ class HistoryApiTests extends PointApiTestSupport {
 
         assertEquals(memberId, response.memberId());
         assertEquals(2, response.histories().size());
-        assertEquals(TxType.USE, response.histories().get(0).txType());
-        assertEquals(useOrderNo, response.histories().get(0).orderNo());
+        assertEquals(TxType.USE, response.histories().getFirst().txType());
+        assertEquals(useOrderNo, response.histories().getFirst().orderNo());
         assertEquals(400, response.histories().get(0).amount());
         assertEquals(600, response.histories().get(0).remainingAmount());
         assertEquals(TxType.EARN, response.histories().get(1).txType());
@@ -90,8 +90,8 @@ class HistoryApiTests extends PointApiTestSupport {
         HistoryResponse response = pointFacadeService.getHistories(memberId, startDate, endDate, TxType.USE);
 
         assertEquals(1, response.histories().size());
-        assertEquals(TxType.USE, response.histories().get(0).txType());
-        assertEquals(useOrderNo, response.histories().get(0).orderNo());
+        assertEquals(TxType.USE, response.histories().getFirst().txType());
+        assertEquals(useOrderNo, response.histories().getFirst().orderNo());
     }
 
     @Test
