@@ -38,13 +38,7 @@ Password:
 ./gradlew test
 ```
 
-API 테스트 Suite 실행:
-
-```bash
-./gradlew test --tests com.payment.point.api.PointApiTestSuite
-```
-
-개별 API 테스트는 API 단위 테스트 클래스로 분리되어 있습니다.
+가개별 API 테스트는 API 단위 테스트 클래스로 분리되어 있습니다.
 
 - `EarnApiTests`
 - `EarnCancelApiTests`
@@ -105,7 +99,7 @@ point:
 | 이력조회         | GET    | `/v1/members/{memberId}/points/histories`             | `200 OK`      |
 | 주문번호 기반 거래조회 | GET    | `/v1/members/{memberId}/points/transactions/by-order` | `200 OK`      |
 
-- 과제 필수 기능은 적립, 적립취소, 사용, 사용취소입니다. 
+- 과제 필수 기능은 적립, 적립취소, 사용, 사용취소입니다.
 - 만료, 잔액조회, 이력조회, 주문번호 기반 거래조회는 운영 편의성과 장애 대응을 위해 확장 구현했습니다.
 
 ### 공통 요청 검증
@@ -181,6 +175,15 @@ point:
 - 엔티티 연관관계는 최소화하고 원장 간 연결은 거래번호 ID로 관리합니다.
 - 잔액 row의 `VERSION`은 JPA 낙관적 락을 위한 보조 안전장치입니다.
 
+### FK 정책
+- 원장 간 필수 참조 관계에는 FK를 적용합니다.
+- `PNT_USE_ALLOC.PTXNO`는 `PNT_USE_MST.PTXNO`를 참조합니다.
+- `PNT_USE_ALLOC.EARN_PTXNO`는 `PNT_EARN_MST.PTXNO`를 참조합니다.
+- `PNT_USE_CANCEL_HIST.USE_PTXNO`는 `PNT_USE_MST.PTXNO`를 참조합니다.
+- `PNT_USE_CANCEL_HIST.USE_ALLOC_ID`는 `PNT_USE_ALLOC.USE_ALLOC_ID`를 참조합니다.
+- `PNT_USE_CANCEL_HIST.RESTORE_PTXNO`는 신규 RESTORE 적립이 생성된 경우 `PNT_EARN_MST.PTXNO`를 참조합니다.
+- 삭제 정책은 기본값인 `RESTRICT`를 유지합니다. 자식 row가 참조 중인 부모 원장은 단독 삭제할 수 없으며, `ON DELETE CASCADE`를 사용하지 않습니다.
+
 ### 동시성 제어
 - 포인트 금액 변경 API는 `memberId` 기준 요청 락을 적용합니다.
 - 현재 락은 Caffeine 로컬 캐시 기반입니다.
@@ -206,6 +209,37 @@ point:
 - 사용 원장 차감 후에는 남은 적립 원장을 기준으로 다음 만료 예정일을 재계산합니다.
 - 사용취소 시 복원된 적립 원장의 만료일이 현재 값보다 빠르면 갱신합니다.
 - 만료 API 처리 후에는 남은 적립 원장을 기준으로 다음 만료 예정일을 재계산합니다.
+
+### 사용 처리 순서
+```text
+1. 회원 요청 락 획득
+2. 금액 및 주문번호 검증
+3. 회원 잔액 조회
+4. NEXT_EXP_DT <= 현재일이면 회원별 만료 선처리
+5. 회원 잔액을 MANUAL 우선으로 차감
+6. 사용 원장 생성
+7. 적립 원장을 우선순위대로 차감하고 Allocation 생성
+8. NEXT_EXP_DT 재계산
+9. 사용 거래 이력 생성
+10. 트랜잭션 commit 후 회원 요청 락 해제
+```
+
+사용 원장은 Allocation FK의 부모 row이므로 Allocation보다 먼저 저장합니다.
+
+### 사용취소 처리 순서
+```text
+1. 회원 요청 락 획득
+2. 금액 및 주문번호 검증
+3. 회원 잔액과 원 사용 원장 조회
+4. 취소 가능한 Allocation을 PRIORITY ASC 순서로 조회
+5. Allocation에 연결된 원 적립 원장을 일괄 조회
+6. 원 적립건이 만료 전이면 기존 적립 원장 복원
+7. 원 적립건이 만료 후이면 신규 RESTORE 적립 생성
+8. Allocation 취소 금액과 사용취소 상세 이력 저장
+9. NEXT_EXP_DT 갱신 및 사용 원장 취소 처리
+10. 사용취소 거래 이력 생성
+11. 트랜잭션 commit 후 회원 요청 락 해제
+```
 
 ### 이력 조회
 - 이력 조회는 `startDate`, `endDate`를 필수로 받습니다.
