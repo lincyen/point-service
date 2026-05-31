@@ -47,13 +47,16 @@ public class PointUseService {
 
     /**
      * <b>사용 원장 등록<b/>
+     * <pre>
+     *     사용 Allocation FK의 부모 row이므로 Allocation 등록 전에 DB에 반영
+     * </pre>
      * @param pointTransactionNo 사용 거래번호
      * @param memberId 회원아이디
      * @param orderNo 클라이언트 주문번호
      * @param amount 사용금액
      */
     public void createUse(String pointTransactionNo, String memberId, String orderNo, long amount) {
-        pntUseMstRepository.save(new PntUseMst(pointTransactionNo, memberId, orderNo, amount));
+        pntUseMstRepository.saveAndFlush(new PntUseMst(pointTransactionNo, memberId, orderNo, amount));
     }
 
     /**

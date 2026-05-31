@@ -147,9 +147,10 @@ public class PointFacadeService {
      *     3. 다음 만료 예정일이 현재일 이전이거나 같으면 회원별 만료 선처리
      *     4. 회원 잔액을 MANUAL 우선으로 차감
      *     5. 포인트 거래번호 생성
-     *     6. 적립 원장 차감 및 사용 Allocation 생성
-     *     7. 회원별 다음 만료 예정일 재계산
-     *     8. 사용 원장 및 거래 이력 등록
+     *     6. 사용 원장 등록
+     *     7. 적립 원장 차감 및 사용 Allocation 생성
+     *     8. 회원별 다음 만료 예정일 재계산
+     *     9. 사용 거래 이력 등록
      * </pre>
      *
      * @param memberId 회원아이디
@@ -168,10 +169,10 @@ public class PointFacadeService {
         pointExpireService.expireMemberBeforeUseIfRequired(memberId, balance, now);
         pointBalanceService.decreaseUseBalance(balance, request.amount());
         String pointTransactionNo = pointIdGenerator.generatePointTransactionNo();
+        pointUseService.createUse(pointTransactionNo, memberId, request.orderNo(), request.amount());
         organizeUseLedger(pointTransactionNo, memberId, request.amount(), now);
         pointExpireService.updateNextExpireDateAfterUse(balance);
 
-        pointUseService.createUse(pointTransactionNo, memberId, request.orderNo(), request.amount());
         pointTransactionService.appendUseTransaction(
                 pointTransactionNo,
                 memberId,
