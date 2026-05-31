@@ -1,0 +1,136 @@
+Project point_service {
+  database_type: 'H2'
+  Note: '포인트 서비스 ERD. H2 schema.sql을 기준으로 작성.'
+}
+
+Table POINT.PNT_MEMBER_BAL {
+  MEMBER_ID varchar(32) [pk, not null, note: '회원아이디 (영문자와 숫자로 구성된 최대 32자리 문자열)']
+  NORMAL_AMT bigint [not null, note: '일반 적립 포인트 잔액']
+  MANUAL_AMT bigint [not null, note: '관리자 수기 지급 포인트 잔액']
+  EXPIRED_AMT bigint [not null, note: '누적 만료 포인트 금액']
+  NEXT_EXP_DT date [note: '다음 만료 예정일']
+  VERSION bigint [not null, note: '낙관적 락 버전']
+  CREATED_AT timestamp [not null, note: '생성일시']
+  UPDATED_AT timestamp [not null, note: '수정일시']
+
+  indexes {
+    NEXT_EXP_DT [name: 'IDX_PNT_MEMBER_BAL_01']
+  }
+
+  Note: '회원별 포인트 잔액'
+}
+
+Table POINT.PNT_TR_HIST {
+  PTXNO varchar(26) [pk, not null, note: '거래번호']
+  OPTXNO varchar(26) [not null, note: '원 거래번호']
+  MEMBER_ID varchar(32) [not null, note: '회원아이디']
+  ORDER_NO varchar(100) [note: '클라이언트 주문번호']
+  ORDER_DTM timestamp [note: '클라이언트 주문/요청 시각']
+  TX_TYPE varchar(20) [not null, note: '거래 유형']
+  TX_AMT bigint [not null, note: '거래 금액']
+  RMN_AMT bigint [not null, note: '거래 후 총 잔액']
+  EXP_DT date [note: '거래 당시 만료일 스냅샷']
+  CREATED_AT timestamp [not null, note: '서버 생성 시각']
+
+  indexes {
+    (MEMBER_ID, ORDER_NO) [unique, name: 'UK_PNT_TR_HIST_01']
+    (MEMBER_ID, OPTXNO) [name: 'IDX_PNT_TR_HIST_02']
+    (MEMBER_ID, CREATED_AT) [name: 'IDX_PNT_TR_HIST_03']
+  }
+
+  Note: '포인트 거래 이력'
+}
+
+Table POINT.PNT_EARN_MST {
+  PTXNO varchar(26) [pk, not null, note: '적립 거래번호, PK']
+  MEMBER_ID varchar(32) [not null, note: '회원아이디']
+  EARN_TYPE varchar(20) [not null, note: '적립 유형']
+  EARN_AMT bigint [not null, note: '최초 적립 금액']
+  RMN_AMT bigint [not null, note: '현재 사용 가능 잔액']
+  USE_AMT bigint [not null, note: '누적 사용 금액']
+  EARN_CNCL_AMT bigint [not null, note: '적립취소 금액']
+  EXPIRED_AMT bigint [not null, note: '만료 금액']
+  FIRST_EXP_DT date [not null, note: '최초 부여 만료일']
+  EXP_DT date [not null, note: '현재 유효 만료일']
+  STATUS varchar(20) [not null, note: '현재 상태']
+  CREATED_AT timestamp [not null, note: '생성일시']
+  UPDATED_AT timestamp [not null, note: '수정일시']
+
+  indexes {
+    (MEMBER_ID, STATUS, EARN_TYPE, EXP_DT, CREATED_AT, PTXNO) [name: 'IDX_PNT_EARN_MST_01']
+    (MEMBER_ID, EXP_DT) [name: 'IDX_PNT_EARN_MST_02']
+  }
+
+  Note: '포인트 적립 원장'
+}
+
+Table POINT.PNT_USE_MST {
+  PTXNO varchar(26) [pk, not null, note: '사용 거래번호, PK']
+  MEMBER_ID varchar(32) [not null, note: '회원아이디']
+  ORDER_NO varchar(100) [not null, note: '클라이언트 주문번호']
+  USE_AMT bigint [not null, note: '최초 사용 금액']
+  CNCL_AMT bigint [not null, note: '누적 사용취소 금액']
+  RMN_AMT bigint [not null, note: '남은 취소 가능 금액']
+  STATUS varchar(20) [not null, note: '사용 거래 상태']
+  CREATED_AT timestamp [not null, note: '생성일시']
+  UPDATED_AT timestamp [not null, note: '수정일시']
+
+  indexes {
+    (MEMBER_ID, ORDER_NO) [name: 'IDX_PNT_USE_MST_01']
+    (MEMBER_ID, CREATED_AT) [name: 'IDX_PNT_USE_MST_02']
+  }
+
+  Note: '포인트 사용원장'
+}
+
+Table POINT.PNT_USE_ALLOC {
+  USE_ALLOC_ID varchar(26) [pk, not null, note: '사용 상세번호, PK']
+  PTXNO varchar(26) [not null, note: '사용 거래번호']
+  EARN_PTXNO varchar(26) [not null, note: '사용된 적립 거래번호']
+  MEMBER_ID varchar(32) [not null, note: '회원아이디']
+  PRIORITY integer [not null, note: '사용 차감 순서']
+  CNSM_AMT bigint [not null, note: '해당 적립건에서 사용한 금액']
+  CNCL_AMT bigint [not null, note: '해당 사용분 중 취소된 금액']
+  RMN_AMT bigint [not null, note: '남은 취소 가능 금액']
+  EXP_DT date [not null, note: '사용 당시 적립건 만료일']
+  CREATED_AT timestamp [not null, note: '생성일시']
+  UPDATED_AT timestamp [not null, note: '수정일시']
+
+  indexes {
+    (PTXNO, PRIORITY) [unique, name: 'UK_PNT_USE_ALLOC_01']
+    (PTXNO, PRIORITY) [name: 'IDX_PNT_USE_ALLOC_01']
+    EARN_PTXNO [name: 'IDX_PNT_USE_ALLOC_02']
+    (MEMBER_ID, CREATED_AT) [name: 'IDX_PNT_USE_ALLOC_03']
+  }
+
+  Note: '포인트 사용 Allocation 상세'
+}
+
+Table POINT.PNT_USE_CANCEL_HIST {
+  USE_CNCL_HIST_ID varchar(26) [pk, not null, note: '사용취소 상세 이력번호, PK']
+  USE_CNCL_PTXNO varchar(26) [not null, note: '사용취소 거래번호']
+  USE_PTXNO varchar(26) [not null, note: '원 사용 거래번호']
+  USE_ALLOC_ID varchar(26) [not null, note: '원 사용 Allocation 번호']
+  MEMBER_ID varchar(32) [not null, note: '회원아이디']
+  CNCL_SEQ integer [not null, note: '원 사용건 내 취소 순번']
+  ORG_EARN_PTXNO varchar(26) [not null, note: '원 적립 거래번호']
+  RESTORE_PTXNO varchar(26) [note: '신규 RESTORE 적립 거래번호 nullable']
+  RESTORE_TYPE varchar(30) [not null, note: '복원 유형']
+  CNCL_AMT bigint [not null, note: '취소 금액']
+  CREATED_AT timestamp [not null, note: '생성일시']
+
+  indexes {
+    (USE_PTXNO, CNCL_SEQ) [name: 'IDX_PNT_USE_CANCEL_HIST_01']
+    USE_CNCL_PTXNO [name: 'IDX_PNT_USE_CANCEL_HIST_02']
+    ORG_EARN_PTXNO [name: 'IDX_PNT_USE_CANCEL_HIST_03']
+    RESTORE_PTXNO [name: 'IDX_PNT_USE_CANCEL_HIST_04']
+  }
+
+  Note: '포인트 사용취소 상세 이력'
+}
+
+Ref FK_PNT_USE_ALLOC_01: POINT.PNT_USE_ALLOC.PTXNO > POINT.PNT_USE_MST.PTXNO
+Ref FK_PNT_USE_ALLOC_02: POINT.PNT_USE_ALLOC.EARN_PTXNO > POINT.PNT_EARN_MST.PTXNO
+Ref FK_PNT_USE_CANCEL_HIST_01: POINT.PNT_USE_CANCEL_HIST.USE_PTXNO > POINT.PNT_USE_MST.PTXNO
+Ref FK_PNT_USE_CANCEL_HIST_02: POINT.PNT_USE_CANCEL_HIST.USE_ALLOC_ID > POINT.PNT_USE_ALLOC.USE_ALLOC_ID
+Ref FK_PNT_USE_CANCEL_HIST_03: POINT.PNT_USE_CANCEL_HIST.RESTORE_PTXNO > POINT.PNT_EARN_MST.PTXNO
