@@ -50,7 +50,7 @@ public class PointExpireService {
     }
 
     /**
-     * <b>사용 전 만료 예정일 도래 여부 확인</b>
+     * <b>사용 전 만료 예정일 도래 여부 확인 및 만료 처리</b>
      * @param memberId 회원아이디
      * @param balance 회원별 포인트 잔액
      * @param baseDate 기준일
@@ -78,16 +78,31 @@ public class PointExpireService {
         updateNextExpireDateIfEarlier(balance, restoredExpireDate);
     }
 
+    /**
+     * <b>회원별 포인트 만료 처리</b>
+     * <pre>
+     *     1. 기준일까지 만료된 ACTIVE 적립 원장을 조회
+     *     2. 적립 원장 잔액 전체를 만료 처리하고 만료 금액을 획득
+     *     3. 적립 유형에 따라 회원 잔액을 차감하고 누적 만료 금액을 증가
+     *     4. 적립 원장별 만료 거래번호 생성 및 거래 이력 등록
+     *     5. 남은 ACTIVE 적립 원장을 기준으로 회원별 다음 만료 예정일 재계산
+     *     6. 만료 처리 건수와 만료 금액 합계 응답
+     * </pre>
+     *
+     * @param memberId 회원아이디
+     * @param balance 회원별 포인트 잔액
+     * @param baseDate 만료 처리 기준일
+     * @return 만료 처리 건수와 만료 금액 합계
+     */
     public ExpireResponse expireMember(String memberId, PntMemberBal balance, LocalDate baseDate) {
         List<PntEarnMst> expirableEarns = pointEarnService.findExpirableEarns(memberId, baseDate);
         long expiredCount = 0;
         long expiredAmountSum = 0;
 
         for (PntEarnMst earn : expirableEarns) {
-            long expiredAmount = earn.getRemainingAmount();
+            long expiredAmount = earn.expireAll();
             pointBalanceService.decreaseBalance(balance, earn.getEarnType(), expiredAmount);
             balance.increaseExpired(expiredAmount);
-            earn.expireAll();
 
             String pointTransactionNo = pointIdGenerator.generatePointTransactionNo();
             pointTransactionService.appendExpireTransaction(pointTransactionNo, earn, expiredAmount, balance.getTotalAmount());
