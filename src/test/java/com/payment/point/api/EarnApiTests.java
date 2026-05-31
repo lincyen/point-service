@@ -42,7 +42,7 @@ class EarnApiTests extends PointApiTestSupport {
     }
 
     @Test
-    @DisplayName("실패-동일 번호 요청, DUPLICATED_ORDER")
+    @DisplayName("실패-동일 주문번호 중복 요청, DUPLICATED_ORDER")
     void earnRejectsDuplicatedOrderNo() {
         String memberId = memberId();
         EarnRequest request = new EarnRequest(orderNo("EARN-API"), null, EarnType.NORMAL, 100, "P10D");
@@ -54,7 +54,7 @@ class EarnApiTests extends PointApiTestSupport {
     }
 
     @Test
-    @DisplayName("실패-만료기간이 P5Y 이면 INVALID_PARAMETER")
+    @DisplayName("실패-최대 만료기간 P5Y 요청, INVALID_PARAMETER")
     void earnRejectsFiveYearExpirePeriod() {
         String memberId = memberId();
         EarnRequest request = new EarnRequest(orderNo("EARN-API"), null, EarnType.NORMAL, 100, "P5Y");
@@ -65,7 +65,7 @@ class EarnApiTests extends PointApiTestSupport {
     }
 
     @Test
-    @DisplayName("실패-외부 적립 요청의 RESTORE 유형은 INVALID_PARAMETER")
+    @DisplayName("실패-외부 적립 요청의 RESTORE 유형, INVALID_PARAMETER")
     void earnRejectsRestoreEarnType() {
         String memberId = memberId();
         EarnRequest request = new EarnRequest(orderNo("EARN-API"), null, EarnType.RESTORE, 100, "P10D");
@@ -94,6 +94,7 @@ class EarnApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-더 빠른 만료일의 적립 생성 시 회원 다음 만료 예정일 갱신")
     void earnUpdatesMemberNextExpireDateWhenEarlierEarnIsCreated() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("EARN-NEXT-LATE"), null,

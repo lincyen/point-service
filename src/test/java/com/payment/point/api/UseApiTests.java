@@ -59,6 +59,7 @@ class UseApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-다음 만료 예정일 도래 시 회원 만료 선처리 후 포인트 사용")
     void useExpiresMemberEarnsOnlyWhenNextExpireDateIsDue() {
         String memberId = memberId();
         EarnResponse expiredEarn = pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-EXPIRE-DUE"), null,

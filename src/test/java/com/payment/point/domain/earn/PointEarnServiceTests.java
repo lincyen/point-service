@@ -11,6 +11,7 @@ import com.payment.point.support.ErrorCode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class PointEarnServiceTests {
@@ -22,6 +23,7 @@ class PointEarnServiceTests {
     );
 
     @Test
+    @DisplayName("실패-만료된 적립 원장 취소 조회, EXPIRED_POINT")
     void findEarnForCancelRejectsExpiredEarn() {
         PntEarnMstRepository pntEarnMstRepository = mock(PntEarnMstRepository.class);
         PointEarnService pointEarnService = new PointEarnService(pntEarnMstRepository, null, null);
@@ -43,6 +45,7 @@ class PointEarnServiceTests {
     }
 
     @Test
+    @DisplayName("성공-최소 만료기간 P1D 적용")
     void resolveExpireDateAcceptsMinimumExpirePeriod() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
         LocalDate now = LocalDate.of(2026, 5, 30);
@@ -53,6 +56,7 @@ class PointEarnServiceTests {
     }
 
     @Test
+    @DisplayName("성공-만료기간 미입력 시 기본 만료기간 적용")
     void resolveExpireDateUsesDefaultExpirePeriodWhenRequestIsNull() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
         LocalDate now = LocalDate.of(2026, 5, 30);
@@ -63,6 +67,7 @@ class PointEarnServiceTests {
     }
 
     @Test
+    @DisplayName("실패-최대 만료기간 P5Y 요청, INVALID_PARAMETER")
     void resolveExpireDateRejectsFiveYearsBecauseMaxIsExclusive() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
         LocalDate now = LocalDate.of(2026, 5, 30);
@@ -74,6 +79,7 @@ class PointEarnServiceTests {
     }
 
     @Test
+    @DisplayName("실패-최소 만료기간 미만 P0D 요청, INVALID_PARAMETER")
     void resolveExpireDateRejectsZeroExpirePeriodBecauseMinimumIsOneDay() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
         LocalDate now = LocalDate.of(2026, 5, 30);

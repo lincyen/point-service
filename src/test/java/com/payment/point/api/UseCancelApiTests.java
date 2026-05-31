@@ -68,6 +68,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-취소 가능 잔액 범위에서 여러 차례 부분 사용취소")
     void useCancelAllowsMultiplePartialCancelsUntilRemainingAmount() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-PARTIAL-EARN"), null,
@@ -88,6 +89,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-부분 사용취소 시 사용 원장 상태 갱신")
     void useCancelUpdatesUseMasterAsPartialCancel() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-MST-EARN"), null,
@@ -107,6 +109,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-부분 사용취소 후 남은 금액을 초과한 취소 요청, CANCEL_AMOUNT_EXCEEDED")
     void useCancelRejectsAmountGreaterThanRemainingAmountAfterPartialCancel() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-REMAIN-EARN"), null,
@@ -126,6 +129,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-이미 전체 취소된 사용 원장 취소 요청, NO_REMAIN_POINT")
     void useCancelRejectsAlreadyFullyCanceledUseMaster() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-FULL-EARN"), null,
@@ -149,6 +153,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-취소 가능 금액을 초과한 사용취소 요청, CANCEL_AMOUNT_EXCEEDED")
     void useCancelRejectsAmountGreaterThanCancelableRemainingAmount() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-EXCEED-EARN"), null,
@@ -164,6 +169,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-사용 Allocation 우선순서에 따른 사용취소 복원")
     void useCancelRestoresAllocationsInUsePriorityOrder() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-ASC-EARN-A"), null,
@@ -186,6 +192,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-원 적립건 만료 시 RESTORE 신규 적립 생성")
     void useCancelCreatesRestoreEarnWhenOriginalEarnIsExpired() {
         String memberId = memberId();
         EarnResponse earnA = pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-EXPIRED-EARN-A"),

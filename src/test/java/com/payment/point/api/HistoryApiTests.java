@@ -14,6 +14,7 @@ import com.payment.point.domain.transaction.TxType;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import java.time.LocalDate;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,6 +27,7 @@ class HistoryApiTests extends PointApiTestSupport {
     private MockMvc mockMvc;
 
     @Test
+    @DisplayName("실패-유효 회원의 거래 이력 조회 결과 없음, NO_HISTORY_RESULT")
     void getHistoriesRejectsWhenResultIsEmpty() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("HISTORY-EMPTY-EARN"), null,
@@ -40,6 +42,7 @@ class HistoryApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-존재하지 않는 회원의 거래 이력 조회, INVALID_USER")
     void getHistoriesRejectsUnknownMember() {
         String memberId = memberId();
         LocalDate startDate = LocalDate.now().minusDays(1);
@@ -52,6 +55,7 @@ class HistoryApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-회원 거래 이력 최신순 조회")
     void getHistoriesReturnsLatestMemberTransactions() {
         String memberId = memberId();
         LocalDate startDate = LocalDate.now().minusDays(1);
@@ -76,6 +80,7 @@ class HistoryApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-거래 유형으로 회원 거래 이력 필터링")
     void getHistoriesFiltersTxTypeWhenRequested() {
         String memberId = memberId();
         LocalDate startDate = LocalDate.now().minusDays(1);
@@ -93,6 +98,7 @@ class HistoryApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-조회 시작일과 종료일이 동일한 거래 이력 조회, INVALID_HISTORY_PERIOD")
     void getHistoriesRejectsWhenStartDateIsNotBeforeEndDate() {
         String memberId = memberId();
         LocalDate date = LocalDate.now();
@@ -104,6 +110,7 @@ class HistoryApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-3개월을 초과한 거래 이력 조회, HISTORY_PERIOD_EXCEEDED")
     void getHistoriesRejectsWhenSearchPeriodExceedsThreeMonths() {
         String memberId = memberId();
         LocalDate startDate = LocalDate.now().minusMonths(4);
@@ -116,6 +123,7 @@ class HistoryApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-올바르지 않은 날짜 형식의 거래 이력 조회, INVALID_PARAMETER")
     void getHistoriesApiRejectsInvalidDateFormat() throws Exception {
         mockMvc.perform(get("/v1/members/{memberId}/points/histories", memberId())
                         .param("startDate", "2026/05/01")
@@ -125,6 +133,7 @@ class HistoryApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-날짜 파라미터가 누락된 거래 이력 조회, INVALID_PARAMETER")
     void getHistoriesApiRejectsMissingDateParameter() throws Exception {
         mockMvc.perform(get("/v1/members/{memberId}/points/histories", memberId())
                         .param("endDate", "2026-05-02"))

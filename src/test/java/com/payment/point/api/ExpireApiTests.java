@@ -8,11 +8,13 @@ import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.balance.BalanceResponse;
 import com.payment.point.domain.earn.EarnType;
 import java.time.LocalDate;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ExpireApiTests extends PointApiTestSupport {
 
     @Test
+    @DisplayName("성공-적립 원장 잔액 만료 처리")
     void expireRemainingEarnPoints() {
         String memberId = memberId();
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("EXPIRE-API-EARN"), null, EarnType.NORMAL, 300, "P2D"));
@@ -29,6 +31,7 @@ class ExpireApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("성공-요청 회원의 적립 원장만 만료 처리")
     void expireProcessesOnlyRequestedMemberPoints() {
         String targetMemberId = memberId();
         String otherMemberId = memberId();
