@@ -11,12 +11,16 @@ import com.payment.point.domain.earn.PntEarnMst;
 import com.payment.point.domain.earn.PntEarnMstRepository;
 import com.payment.point.domain.earn.EarnType;
 import com.payment.point.domain.earn.EarnStatus;
+import com.payment.point.domain.use.PntUseAlloc;
+import com.payment.point.domain.use.PntUseAllocRepository;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class UseApiTests extends PointApiTestSupport {
@@ -29,6 +33,9 @@ class UseApiTests extends PointApiTestSupport {
 
     @Autowired
     private PntEarnMstRepository pntEarnMstRepository;
+
+    @Autowired
+    private PntUseAllocRepository pntUseAllocRepository;
 
     @Test
     @DisplayName("성공-포인트 사용")
@@ -77,5 +84,72 @@ class UseApiTests extends PointApiTestSupport {
         assertEquals(LocalDate.now().plusDays(20), balance.getNextExpireDate());
         assertEquals(EarnStatus.EXPIRED, expiredEarnMst.getStatus());
         assertEquals(50, usableEarnMst.getRemainingAmount());
+    }
+
+    @Test
+    @DisplayName("성공-MANUAL 적립 원장을 일반 적립 원장보다 우선 차감")
+    void useConsumesManualEarnBeforeNormalEarn() {
+        String memberId = memberId();
+        EarnResponse normalEarn = givenEarn(memberId, "USE-PRIORITY-NORMAL", EarnType.NORMAL, 100, "P2D");
+        EarnResponse manualEarn = givenEarn(memberId, "USE-PRIORITY-MANUAL", EarnType.MANUAL, 100, "P10D");
+
+        UseResponse useResponse = givenUse(memberId, "USE-PRIORITY-MANUAL-FIRST", 50);
+
+        List<PntUseAlloc> allocations = pntUseAllocRepository.findByPtxnoOrderByPriorityAsc(
+                useResponse.pointTransactionNo()
+        );
+        assertEquals(1, allocations.size());
+        assertEquals(manualEarn.pointTransactionNo(), allocations.getFirst().getEarnPtxno());
+        assertEquals(100, pntEarnMstRepository.findById(normalEarn.pointTransactionNo()).orElseThrow().getRemainingAmount());
+    }
+
+    @Test
+    @DisplayName("성공-동일 적립 유형이면 만료일이 빠른 적립 원장을 우선 차감")
+    void useConsumesEarlierExpireEarnFirst() {
+        String memberId = memberId();
+        EarnResponse laterEarn = givenEarn(memberId, "USE-PRIORITY-LATER", EarnType.NORMAL, 100, "P10D");
+        EarnResponse earlierEarn = givenEarn(memberId, "USE-PRIORITY-EARLIER", EarnType.NORMAL, 100, "P2D");
+
+        UseResponse useResponse = givenUse(memberId, "USE-PRIORITY-EARLIER-FIRST", 50);
+
+        List<PntUseAlloc> allocations = pntUseAllocRepository.findByPtxnoOrderByPriorityAsc(
+                useResponse.pointTransactionNo()
+        );
+        assertEquals(1, allocations.size());
+        assertEquals(earlierEarn.pointTransactionNo(), allocations.getFirst().getEarnPtxno());
+        assertEquals(100, pntEarnMstRepository.findById(laterEarn.pointTransactionNo()).orElseThrow().getRemainingAmount());
+    }
+
+    @Test
+    @DisplayName("실패-존재하지 않는 사용 원장을 참조하는 Allocation 등록, FK 제약 위반")
+    void useAllocationRejectsUnknownUseMasterReference() {
+        assertThrows(DataIntegrityViolationException.class, () -> jdbcTemplate.update("""
+                insert into POINT.PNT_USE_ALLOC (
+                    USE_ALLOC_ID, PTXNO, EARN_PTXNO, MEMBER_ID, PRIORITY,
+                    CNSM_AMT, CNCL_AMT, RMN_AMT, EXP_DT, CREATED_AT, UPDATED_AT
+                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, current_timestamp)
+                """,
+                "99999999999999999999999991",
+                "99999999999999999999999992",
+                "99999999999999999999999993",
+                memberId(),
+                1,
+                100,
+                0,
+                100,
+                LocalDate.now().plusDays(1)
+        ));
+    }
+
+    @Test
+    @DisplayName("실패-Allocation이 참조 중인 사용 원장 단독 삭제, FK RESTRICT")
+    void useMasterDeleteRejectsWhenAllocationExists() {
+        String memberId = memberId();
+        givenEarn(memberId, "USE-FK-EARN", EarnType.NORMAL, 100, "P10D");
+        UseResponse useResponse = givenUse(memberId, "USE-FK", 50);
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> jdbcTemplate.update("delete from POINT.PNT_USE_MST where PTXNO = ?",
+                        useResponse.pointTransactionNo()));
     }
 }
