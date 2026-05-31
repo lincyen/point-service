@@ -121,6 +121,11 @@ public class PntMemberBal {
         this.expiredAmount += amount;
     }
 
+    /**
+     * <b>다음 만료예정일 도래 여부</b>
+     * @param baseDate 기준일
+     * @return 기준일 기준 만료예정일 도래 여부 응답
+     */
     public boolean isExpirationDueOn(LocalDate baseDate) {
         return nextExpireDate != null && !nextExpireDate.isAfter(baseDate);
     }

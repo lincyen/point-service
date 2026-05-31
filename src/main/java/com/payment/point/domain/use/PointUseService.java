@@ -3,7 +3,7 @@ package com.payment.point.domain.use;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import com.payment.point.support.PointIdGenerator;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -25,14 +25,14 @@ public class PointUseService {
      * @param memberId 회원아이디
      * @param priority 사용 차감 순서
      * @param consumeAmount 해당 사용분 중 취소된 금액
-     * @param expireAt 사용 당시 적립건 만료일
+     * @param expireDate 사용 당시 적립건 만료일
      */
     public void createAllocation(String pointTransactionNo,
                                  String earnPointTransactionNo,
                                  String memberId,
                                  int priority,
                                  long consumeAmount,
-                                 LocalDateTime expireAt) {
+                                 LocalDate expireDate) {
         pntUseAllocRepository.save(
                 new PntUseAlloc(
                         pointIdGenerator.generateDetailId(),
@@ -41,7 +41,7 @@ public class PointUseService {
                         memberId,
                         priority,
                         consumeAmount,
-                        expireAt)
+                        expireDate)
         );
     }
 

@@ -4,7 +4,7 @@ import com.payment.point.config.PointPolicyProperties;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import com.payment.point.support.PointIdGenerator;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -69,27 +69,27 @@ public class PointEarnService {
     /**
      * <b>만료일 계산</b>
      * <pre>
-     *     요청 만료일과 처리 기준 시간을 기준으로 현재시간에서 만료일을 더한 LocalDataTime 을 계산
+     *     요청 만료 기간과 처리 기준일을 기준으로 LocalDate 만료일을 계산
      *     정책 상 최소/최대 만료일에서 벗어나는 경우 Exception 처리
      * </pre>
      *
      * @param requestedExpirePeriod ISO-8601 period 형식의 요청 만료 기간
-     * @param now 처리 기준 시각
-     * @return 계산된 포인트 만료일시
+     * @param baseDate 처리 기준일
+     * @return 계산된 포인트 만료일
      */
-    public LocalDateTime resolveExpireAt(String requestedExpirePeriod, LocalDateTime now) {
+    public LocalDate resolveExpireDate(String requestedExpirePeriod, LocalDate baseDate) {
         PointPolicyProperties.Earn earnPolicy = pointPolicyProperties.earn();
         Period expirePeriod = parseExpirePeriod(
                 requestedExpirePeriod == null ? earnPolicy.defaultExpirePeriod() : requestedExpirePeriod
         );
-        LocalDateTime expireAt = now.plus(expirePeriod);
-        LocalDateTime minExpireAt = now.plus(parseExpirePeriod(earnPolicy.minExpirePeriod()));
-        LocalDateTime maxExpireAt = now.plus(parseExpirePeriod(earnPolicy.maxExpirePeriod()));
+        LocalDate expireDate = baseDate.plus(expirePeriod);
+        LocalDate minExpireDate = baseDate.plus(parseExpirePeriod(earnPolicy.minExpirePeriod()));
+        LocalDate maxExpireDate = baseDate.plus(parseExpirePeriod(earnPolicy.maxExpirePeriod()));
 
-        if (expireAt.isBefore(minExpireAt) || !expireAt.isBefore(maxExpireAt)) {
+        if (expireDate.isBefore(minExpireDate) || !expireDate.isBefore(maxExpireDate)) {
             throw new ApiException(ErrorCode.INVALID_PARAMETER);
         }
-        return expireAt;
+        return expireDate;
     }
 
     /**
@@ -99,12 +99,12 @@ public class PointEarnService {
      * @param memberId 회원아이디
      * @param earnType 적립 유형
      * @param amount 적립 금액
-     * @param expireAt 만료일시
+     * @param expireDate 만료일
      * @return 저장된 적립 원장
      */
     public PntEarnMst createEarn(String pointTransactionNo, String memberId, EarnType earnType, long amount,
-            LocalDateTime expireAt) {
-        PntEarnMst earn = new PntEarnMst(pointTransactionNo, memberId, earnType, amount, expireAt);
+            LocalDate expireDate) {
+        PntEarnMst earn = new PntEarnMst(pointTransactionNo, memberId, earnType, amount, expireDate);
         return pntEarnMstRepository.save(earn);
     }
 
@@ -121,10 +121,10 @@ public class PointEarnService {
      * @param memberId 회원아이디
      * @param pointTransactionNo 적립 거래번호
      * @param requestAmount 요청 적립취소 금액
-     * @param baseDtm 만료 여부 판단 기준 시각
+     * @param baseDate 만료 여부 판단 기준일
      * @return 적립취소 대상 원장
      */
-    public PntEarnMst findEarnForCancel(String memberId, String pointTransactionNo, long requestAmount, LocalDateTime baseDtm) {
+    public PntEarnMst findEarnForCancel(String memberId, String pointTransactionNo, long requestAmount, LocalDate baseDate) {
         PntEarnMst earn = pntEarnMstRepository.findById(pointTransactionNo)
                 .filter(value -> value.getMemberId().equals(memberId))
                 .orElseThrow(() -> new ApiException(ErrorCode.NO_POINT_HISTORY));
@@ -135,7 +135,7 @@ public class PointEarnService {
         if (earn.getStatus() == EarnStatus.CNCL) {
             throw new ApiException(ErrorCode.ALREADY_CANCELED);
         }
-        if (earn.isExpiredAt(baseDtm) || earn.getExpiredAmount() > 0 || earn.getStatus() == EarnStatus.EXPIRED) {
+        if (earn.isExpiredOn(baseDate) || earn.getExpiredAmount() > 0 || earn.getStatus() == EarnStatus.EXPIRED) {
             throw new ApiException(ErrorCode.EXPIRED_POINT);
         }
         if (earn.getRemainingAmount() != requestAmount) {
@@ -151,22 +151,26 @@ public class PointEarnService {
      * </pre>
      *
      * @param memberId 회원아이디
-     * @param baseDtm 사용 가능 여부 판단 기준 시각
+     * @param baseDate 사용 가능 여부 판단 기준일
      * @return 사용 가능한 적립 원장 목록
      */
-    public List<PntEarnMst> findUsableEarns(String memberId, LocalDateTime baseDtm) {
-        return pntEarnMstRepository.findUsableEarns(memberId, baseDtm);
+    public List<PntEarnMst> findUsableEarns(String memberId, LocalDate baseDate) {
+        return pntEarnMstRepository.findUsableEarns(memberId, baseDate);
     }
 
     /**
      * <b>회원별 만료 처리 대상 조회</b>
      *
      * @param memberId 회원아이디
-     * @param baseDtm 만료 기준 시각
+     * @param baseDate 만료 기준일
      * @return 회원별 만료 대상 적립 원장 목록
      */
-    public List<PntEarnMst> findExpirableEarns(String memberId, LocalDateTime baseDtm) {
-        return pntEarnMstRepository.findExpirableEarns(memberId, baseDtm);
+    public List<PntEarnMst> findExpirableEarns(String memberId, LocalDate baseDate) {
+        return pntEarnMstRepository.findExpirableEarns(memberId, baseDate);
+    }
+
+    public LocalDate findNextExpireDate(String memberId) {
+        return pntEarnMstRepository.findNextExpireDate(memberId);
     }
 
     /**
@@ -180,22 +184,23 @@ public class PointEarnService {
     }
 
     /**
-     * 만료된 원 적립건의 사용취소 금액을 신규 RESTORE 적립으로 생성한다.
-     *
+     * <b>만료된 원 적립건의 사용취소 금액을 신규 RESTORE 적립으로 생성</b>
+     * <pre>
+     *     신규 적립건의 만료일은 기본 만료일로 설정한다.
+     * </pre>
      * @param memberId 회원아이디
      * @param amount 복원 금액
-     * @param now RESTORE 적립 생성 기준 시각
-     * @return 생성된 RESTORE 적립 거래번호
+     * @param baseDate RESTORE 적립 생성 기준일
+     * @return 생성된 RESTORE 적립 원장
      */
-    public String createRestoreEarn(String memberId, long amount, LocalDateTime now) {
+    public PntEarnMst createRestoreEarn(String memberId, long amount, LocalDate baseDate) {
         String restorePointTransactionNo = pointIdGenerator.generatePointTransactionNo();
-        LocalDateTime restoreExpireAt = now.plus(parseExpirePeriod(pointPolicyProperties.earn().defaultExpirePeriod()));
-        pntEarnMstRepository.save(new PntEarnMst(restorePointTransactionNo, memberId, EarnType.RESTORE, amount, restoreExpireAt));
-        return restorePointTransactionNo;
+        LocalDate restoreExpireDate = baseDate.plus(parseExpirePeriod(pointPolicyProperties.earn().defaultExpirePeriod()));
+        return pntEarnMstRepository.save(new PntEarnMst(restorePointTransactionNo, memberId, EarnType.RESTORE, amount, restoreExpireDate));
     }
 
     /**
-     * ISO-8601 period 문자열을 Java {@link Period}로 파싱한다.
+     * <b>ISO-8601 period 문자열을 Java {@link Period}로 parse</b>
      *
      * @param expirePeriod ISO-8601 period 문자열
      * @return 파싱된 만료 기간

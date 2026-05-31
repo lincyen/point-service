@@ -1,8 +1,8 @@
 package com.payment.point.api;
 
 import com.payment.point.api.balance.BalanceResponse;
-import com.payment.point.api.common.ExpireRequest;
-import com.payment.point.api.common.ExpireResponse;
+import com.payment.point.api.expire.ExpireRequest;
+import com.payment.point.api.expire.ExpireResponse;
 import com.payment.point.api.earn.EarnCancelRequest;
 import com.payment.point.api.earn.EarnCancelResponse;
 import com.payment.point.api.earn.EarnRequest;

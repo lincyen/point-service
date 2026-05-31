@@ -2,17 +2,17 @@ package com.payment.point.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.earn.EarnResponse;
+import com.payment.point.domain.balance.PntMemberBal;
+import com.payment.point.domain.balance.PntMemberBalRepository;
 import com.payment.point.domain.earn.EarnType;
 import com.payment.point.domain.earn.PntEarnMst;
 import com.payment.point.domain.earn.PntEarnMstRepository;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +21,9 @@ class EarnApiTests extends PointApiTestSupport {
 
     @Autowired
     private PntEarnMstRepository pntEarnMstRepository;
+
+    @Autowired
+    private PntMemberBalRepository pntMemberBalRepository;
 
     @Test
     @DisplayName("성공-적립 생성")
@@ -76,7 +79,7 @@ class EarnApiTests extends PointApiTestSupport {
     @DisplayName("성공-expirePeriod 미입력 시 P365D 기본 만료기간 적용")
     void earnUsesDefaultExpirePeriodWhenExpirePeriodIsNull() {
         String memberId = memberId();
-        LocalDateTime beforeEarn = LocalDateTime.now();
+        LocalDate beforeEarn = LocalDate.now();
 
         EarnResponse response = pointFacadeService.earn(
                 memberId,
@@ -84,10 +87,22 @@ class EarnApiTests extends PointApiTestSupport {
         );
 
         PntEarnMst earn = pntEarnMstRepository.findById(response.pointTransactionNo()).orElseThrow();
-        LocalDateTime expectedExpireAt = beforeEarn.plusDays(365);
-        Duration difference = Duration.between(expectedExpireAt, earn.getExpireAt()).abs();
+        LocalDate expectedExpireDate = beforeEarn.plusDays(365);
 
         assertEquals(memberId, earn.getMemberId());
-        assertTrue(difference.getSeconds() < 5);
+        assertEquals(expectedExpireDate, earn.getExpireDate());
+    }
+
+    @Test
+    void earnUpdatesMemberNextExpireDateWhenEarlierEarnIsCreated() {
+        String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("EARN-NEXT-LATE"), null,
+                EarnType.NORMAL, 100, "P10D"));
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("EARN-NEXT-EARLY"), null,
+                EarnType.NORMAL, 100, "P2D"));
+
+        PntMemberBal balance = pntMemberBalRepository.findById(memberId).orElseThrow();
+
+        assertEquals(LocalDate.now().plusDays(2), balance.getNextExpireDate());
     }
 }

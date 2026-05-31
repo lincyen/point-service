@@ -24,7 +24,7 @@ import com.payment.point.domain.use.RestoreType;
 import com.payment.point.domain.use.UseStatus;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -231,7 +231,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     private void expireEarn(String ptxno) {
         jdbcTemplate.update(
                 "update POINT.PNT_EARN_MST set EXP_DT = ? where PTXNO = ?",
-                LocalDateTime.now().minusSeconds(1),
+                LocalDate.now().minusDays(1),
                 ptxno
         );
     }

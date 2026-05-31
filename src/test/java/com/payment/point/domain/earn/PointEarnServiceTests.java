@@ -9,7 +9,7 @@ import com.payment.point.config.PointPolicyProperties;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -26,9 +26,9 @@ class PointEarnServiceTests {
         PntEarnMstRepository pntEarnMstRepository = mock(PntEarnMstRepository.class);
         PointEarnService pointEarnService = new PointEarnService(pntEarnMstRepository, null, null);
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate now = LocalDate.now();
         PntEarnMst earn = new PntEarnMst("20260528100000001000000009", "550e8400e29b41d4a716446655440000",
-                EarnType.NORMAL, 1_000L, now.minusSeconds(1));
+                EarnType.NORMAL, 1_000L, now.minusDays(1));
         when(pntEarnMstRepository.findById(earn.getPtxno())).thenReturn(Optional.of(earn));
 
         assertThatThrownBy(() -> pointEarnService.findEarnForCancel(
@@ -43,42 +43,42 @@ class PointEarnServiceTests {
     }
 
     @Test
-    void resolveExpireAtAcceptsMinimumExpirePeriod() {
+    void resolveExpireDateAcceptsMinimumExpirePeriod() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
-        LocalDateTime now = LocalDateTime.of(2026, 5, 30, 10, 0);
+        LocalDate now = LocalDate.of(2026, 5, 30);
 
-        LocalDateTime expireAt = pointEarnService.resolveExpireAt("P1D", now);
+        LocalDate expireDate = pointEarnService.resolveExpireDate("P1D", now);
 
-        assertThat(expireAt).isEqualTo(now.plusDays(1));
+        assertThat(expireDate).isEqualTo(now.plusDays(1));
     }
 
     @Test
-    void resolveExpireAtUsesDefaultExpirePeriodWhenRequestIsNull() {
+    void resolveExpireDateUsesDefaultExpirePeriodWhenRequestIsNull() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
-        LocalDateTime now = LocalDateTime.of(2026, 5, 30, 10, 0);
+        LocalDate now = LocalDate.of(2026, 5, 30);
 
-        LocalDateTime expireAt = pointEarnService.resolveExpireAt(null, now);
+        LocalDate expireDate = pointEarnService.resolveExpireDate(null, now);
 
-        assertThat(expireAt).isEqualTo(now.plusDays(365));
+        assertThat(expireDate).isEqualTo(now.plusDays(365));
     }
 
     @Test
-    void resolveExpireAtRejectsFiveYearsBecauseMaxIsExclusive() {
+    void resolveExpireDateRejectsFiveYearsBecauseMaxIsExclusive() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
-        LocalDateTime now = LocalDateTime.of(2026, 5, 30, 10, 0);
+        LocalDate now = LocalDate.of(2026, 5, 30);
 
-        assertThatThrownBy(() -> pointEarnService.resolveExpireAt("P5Y", now))
+        assertThatThrownBy(() -> pointEarnService.resolveExpireDate("P5Y", now))
                 .isInstanceOf(ApiException.class)
                 .satisfies(exception -> assertThat(((ApiException) exception).getErrorCode())
                         .isEqualTo(ErrorCode.INVALID_PARAMETER));
     }
 
     @Test
-    void resolveExpireAtRejectsZeroExpirePeriodBecauseMinimumIsOneDay() {
+    void resolveExpireDateRejectsZeroExpirePeriodBecauseMinimumIsOneDay() {
         PointEarnService pointEarnService = new PointEarnService(null, POINT_POLICY_PROPERTIES, null);
-        LocalDateTime now = LocalDateTime.of(2026, 5, 30, 10, 0);
+        LocalDate now = LocalDate.of(2026, 5, 30);
 
-        assertThatThrownBy(() -> pointEarnService.resolveExpireAt("P0D", now))
+        assertThatThrownBy(() -> pointEarnService.resolveExpireDate("P0D", now))
                 .isInstanceOf(ApiException.class)
                 .satisfies(exception -> assertThat(((ApiException) exception).getErrorCode())
                         .isEqualTo(ErrorCode.INVALID_PARAMETER));

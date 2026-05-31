@@ -1,7 +1,7 @@
 package com.payment.point.domain.earn;
 
 import java.util.List;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +19,7 @@ public interface PntEarnMstRepository extends JpaRepository<PntEarnMst, String> 
      *     4. 포인트 거래번호 짧은 순
      * </pre>
      * @param memberId 회원아이디
-     * @param baseDtm 사용 가능 여부 판단 기준 시각
+     * @param baseDate 사용 가능 여부 판단 기준일
      * @return 적립원장(sort 순)
      */
     @Query(value = """
@@ -28,14 +28,14 @@ public interface PntEarnMstRepository extends JpaRepository<PntEarnMst, String> 
             where e.memberId = :memberId
               and e.status = com.payment.point.domain.earn.EarnStatus.ACTIVE
               and e.remainingAmount > 0
-              and e.expireAt > :baseDtm
+              and e.expireDate > :baseDate
             order by
               case when e.earnType = com.payment.point.domain.earn.EarnType.MANUAL then 0 else 1 end,
-              e.expireAt asc,
+              e.expireDate asc,
               e.createdAt asc,
               e.ptxno asc
             """)
-    List<PntEarnMst> findUsableEarns(@Param("memberId") String memberId, @Param("baseDtm") LocalDateTime baseDtm);
+    List<PntEarnMst> findUsableEarns(@Param("memberId") String memberId, @Param("baseDate") LocalDate baseDate);
 
     @Query("""
             select e
@@ -43,11 +43,20 @@ public interface PntEarnMstRepository extends JpaRepository<PntEarnMst, String> 
             where e.memberId = :memberId
               and e.status = com.payment.point.domain.earn.EarnStatus.ACTIVE
               and e.remainingAmount > 0
-              and e.expireAt <= :baseDtm
-            order by e.expireAt asc, e.createdAt asc
+              and e.expireDate <= :baseDate
+            order by e.expireDate asc, e.createdAt asc
             """)
     List<PntEarnMst> findExpirableEarns(
             @Param("memberId") String memberId,
-            @Param("baseDtm") LocalDateTime baseDtm
+            @Param("baseDate") LocalDate baseDate
     );
+
+    @Query("""
+            select min(e.expireDate)
+            from PntEarnMst e
+            where e.memberId = :memberId
+              and e.status = com.payment.point.domain.earn.EarnStatus.ACTIVE
+              and e.remainingAmount > 0
+            """)
+    LocalDate findNextExpireDate(@Param("memberId") String memberId);
 }

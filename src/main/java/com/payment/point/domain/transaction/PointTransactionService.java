@@ -62,7 +62,7 @@ public class PointTransactionService {
                 TxType.EARN,
                 earnMst.getEarnAmount(),
                 remainingAmount,
-                earnMst.getExpireAt()
+                earnMst.getExpireDate()
         );
     }
 
@@ -158,7 +158,7 @@ public class PointTransactionService {
                 TxType.EXPIRE,
                 expiredAmount,
                 remainingAmount,
-                earnMst.getExpireAt()
+                earnMst.getExpireDate()
         );
     }
 
@@ -172,10 +172,10 @@ public class PointTransactionService {
      * @param txType 거래 유형
      * @param txAmount 거래 금액
      * @param remainingAmount 거래 후 총 잔액
-     * @param expireAt 거래 당시 만료일
+     * @param expireDate 거래 당시 만료일
      */
     private void appendTransaction(String pointTransactionNo, String originalPointTransactionNo, String memberId, String orderNo,
-            LocalDateTime orderDtm, TxType txType, long txAmount, long remainingAmount, LocalDateTime expireAt) {
+            LocalDateTime orderDtm, TxType txType, long txAmount, long remainingAmount, LocalDate expireDate) {
         pntTrHistRepository.save(new PntTrHist(
                 pointTransactionNo,
                 originalPointTransactionNo,
@@ -185,7 +185,7 @@ public class PointTransactionService {
                 txType,
                 txAmount,
                 remainingAmount,
-                expireAt
+                expireDate
         ));
     }
 
@@ -211,7 +211,7 @@ public class PointTransactionService {
                         history.getTxType(),
                         history.getTxAmount(),
                         history.getRemainingAmount(),
-                        history.getExpireAt(),
+                        history.getExpireDate(),
                         history.getCreatedAt()
                 ))
                 .toList();
@@ -276,7 +276,7 @@ public class PointTransactionService {
                                 history.getTxType(),
                                 history.getTxAmount(),
                                 history.getRemainingAmount(),
-                                history.getExpireAt(),
+                                history.getExpireDate(),
                                 history.getCreatedAt()
                         )
                 ))
