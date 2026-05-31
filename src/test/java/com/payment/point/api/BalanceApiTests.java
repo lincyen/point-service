@@ -71,4 +71,18 @@ class BalanceApiTests extends PointApiTestSupport {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.name()));
     }
+
+    @Test
+    @DisplayName("실패-회원별 최대 보유 가능 포인트 초과 적립, INCORRECT_POINT")
+    void earnRejectsMemberMaxBalanceExceeded() {
+        String memberId = memberId();
+        for (int sequence = 0; sequence < 10; sequence++) {
+            givenEarn(memberId, "BALANCE-MAX-" + sequence, EarnType.NORMAL, 100_000, "P10D");
+        }
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> givenEarn(memberId, "BALANCE-MAX-EXCEEDED", EarnType.NORMAL, 1, "P10D"));
+
+        assertEquals(ErrorCode.INCORRECT_POINT, exception.getErrorCode());
+    }
 }
