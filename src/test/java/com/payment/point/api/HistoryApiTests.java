@@ -28,13 +28,27 @@ class HistoryApiTests extends PointApiTestSupport {
     @Test
     void getHistoriesRejectsWhenResultIsEmpty() {
         String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("HISTORY-EMPTY-EARN"), null,
+                EarnType.NORMAL, 100, "P10D"));
+        LocalDate startDate = LocalDate.now().minusDays(3);
+        LocalDate endDate = LocalDate.now().minusDays(2);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> pointFacadeService.getHistories(memberId, startDate, endDate, null));
+
+        assertEquals(ErrorCode.NO_HISTORY_RESULT, exception.getErrorCode());
+    }
+
+    @Test
+    void getHistoriesRejectsUnknownMember() {
+        String memberId = memberId();
         LocalDate startDate = LocalDate.now().minusDays(1);
         LocalDate endDate = LocalDate.now().plusDays(1);
 
         ApiException exception = assertThrows(ApiException.class,
                 () -> pointFacadeService.getHistories(memberId, startDate, endDate, null));
 
-        assertEquals(ErrorCode.NO_HISTORY_RESULT, exception.getErrorCode());
+        assertEquals(ErrorCode.INVALID_USER, exception.getErrorCode());
     }
 
     @Test

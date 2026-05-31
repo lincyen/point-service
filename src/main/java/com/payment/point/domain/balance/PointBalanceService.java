@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
  * 회원별 포인트 잔액 도메인 서비스.
  *
  * <pre>
- *     회원 잔액 row 생성/조회, 잔액 증감, 최대 보유 가능 포인트 검증을 담당한다.
+ *     회원 잔액 row 생성/조회, 회원 존재 여부 검증, 잔액 증감, 최대 보유 가능 포인트 검증을 담당한다.
  * </pre>
  */
 @Service
@@ -53,6 +53,20 @@ public class PointBalanceService {
      */
     public PntMemberBal findBalance(String memberId) {
         return pntMemberBalRepository.findById(memberId).orElseThrow(() -> new ApiException(ErrorCode.INVALID_USER));
+    }
+
+    /**
+     * <b>회원 존재 여부 valid</b>
+     * <pre>
+     *     회원 잔액 row가 없으면 INVALID_USER 처리
+     * </pre>
+     *
+     * @param memberId 회원아이디
+     */
+    public void validateMember(String memberId) {
+        if (!pntMemberBalRepository.existsById(memberId)) {
+            throw new ApiException(ErrorCode.INVALID_USER);
+        }
     }
 
     /**

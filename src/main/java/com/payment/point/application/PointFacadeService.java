@@ -387,8 +387,9 @@ public class PointFacadeService {
      * <b>포인트 거래 이력 조회</b>
      * <pre>
      *     1. 이력 조회 기간 valid
-     *     2. 회원아이디, 조회 기간, 거래 유형을 기준으로 거래 이력 조회
-     *     3. 조회 결과가 없으면 NO_HISTORY_RESULT
+     *     2. 회원 잔액 row 존재 여부 valid
+     *     3. 회원아이디, 조회 기간, 거래 유형을 기준으로 거래 이력 조회
+     *     4. 조회 결과가 없으면 NO_HISTORY_RESULT
      * </pre>
      * @param memberId 회원아이디
      * @param startDate 조회 시작일
@@ -399,15 +400,17 @@ public class PointFacadeService {
     @Transactional(readOnly = true)
     public HistoryResponse getHistories(String memberId, LocalDate startDate, LocalDate endDate, TxType txType) {
         pointTransactionService.validateHistorySearchPeriod(startDate, endDate);
+        pointBalanceService.validateMember(memberId);
         return pointTransactionService.getHistories(memberId, startDate, endDate, txType);
     }
 
     /**
      * <b>주문번호 기반 포인트 거래 조회</b>
      * <pre>
-     *     1. 회원아이디와 주문번호로 거래 이력 조회
-     *     2. 거래 유형이 입력되면 해당 유형만 조회
-     *     3. 거래가 없으면 exists=false 응답
+     *     1. 회원 잔액 row 존재 여부 valid
+     *     2. 회원아이디와 주문번호로 거래 이력 조회
+     *     3. 거래 유형이 입력되면 해당 유형만 조회
+     *     4. 거래가 없으면 exists=false 응답
      * </pre>
      *
      * @param memberId 회원아이디
@@ -417,6 +420,7 @@ public class PointFacadeService {
      */
     @Transactional(readOnly = true)
     public TransactionLookupResponse getTransactionByOrder(String memberId, String orderNo, TxType txType) {
+        pointBalanceService.validateMember(memberId);
         return pointTransactionService.getTransactionByOrder(memberId, orderNo, txType);
     }
 }

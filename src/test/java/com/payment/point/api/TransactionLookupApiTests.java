@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.payment.point.api.earn.EarnRequest;
@@ -13,6 +14,8 @@ import com.payment.point.api.use.UseRequest;
 import com.payment.point.api.use.UseResponse;
 import com.payment.point.domain.earn.EarnType;
 import com.payment.point.domain.transaction.TxType;
+import com.payment.point.support.ApiException;
+import com.payment.point.support.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 class TransactionLookupApiTests extends PointApiTestSupport {
@@ -75,6 +78,8 @@ class TransactionLookupApiTests extends PointApiTestSupport {
     @Test
     void getTransactionByOrderReturnsNotExistsWhenOrderDoesNotExist() {
         String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("LOOKUP-EXISTING-EARN"), null,
+                EarnType.NORMAL, 100, "P10D"));
         String orderNo = orderNo("LOOKUP-MISSING");
 
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, null);
@@ -84,5 +89,15 @@ class TransactionLookupApiTests extends PointApiTestSupport {
         assertEquals(orderNo, response.orderNo());
         assertNull(response.txType());
         assertNull(response.transaction());
+    }
+
+    @Test
+    void getTransactionByOrderRejectsUnknownMember() {
+        String memberId = memberId();
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> pointFacadeService.getTransactionByOrder(memberId, orderNo("LOOKUP-UNKNOWN"), null));
+
+        assertEquals(ErrorCode.INVALID_USER, exception.getErrorCode());
     }
 }

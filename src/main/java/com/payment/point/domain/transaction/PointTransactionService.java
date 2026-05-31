@@ -191,6 +191,10 @@ public class PointTransactionService {
 
     /**
      * <b>포인트 거래 이력 조회</b>
+     * <pre>
+     *     Facade에서 회원 잔액 row 존재 여부를 검증한 뒤 호출
+     *     유효 회원의 조회 결과가 없으면 NO_HISTORY_RESULT 처리
+     * </pre>
      *
      * @param memberId 회원아이디
      * @param startDate 조회 시작일
@@ -250,6 +254,8 @@ public class PointTransactionService {
      *
      * <pre>
      *     네트워크 유실 등으로 처리 응답을 받지 못했을 경우, 요청 건이 처리되었는지 확인하기 위해 사용
+     *     Facade에서 회원 잔액 row 존재 여부를 검증한 뒤 호출한다.
+     *     유효 회원의 주문번호에 해당하는 거래가 없으면 exists=false 응답을 반환한다.
      * </pre>
      *
      * @param memberId 회원아이디
