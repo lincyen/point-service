@@ -11,6 +11,7 @@ public interface PntEarnMstRepository extends JpaRepository<PntEarnMst, String> 
     /**
      * <b>사용 가능한 적립 거래 조회 (JPQL)</b>
      * <pre>
+     *     해당 회원의 적립 상태가 ACTIVE 이고 잔액이 있는 거래건 중 만료일이 지나지 않은 건만 조회
      *     정책에 따라
      *     1. 관리자 수기 지급 포인트
      *     2. 만료일 짧은 순
@@ -35,18 +36,6 @@ public interface PntEarnMstRepository extends JpaRepository<PntEarnMst, String> 
               e.ptxno asc
             """)
     List<PntEarnMst> findUsableEarns(@Param("memberId") String memberId, @Param("baseDtm") LocalDateTime baseDtm);
-
-    List<PntEarnMst> findByMemberIdOrderByExpireAtAsc(String memberId);
-
-    @Query("""
-            select e
-            from PntEarnMst e
-            where e.status = com.payment.point.domain.earn.EarnStatus.ACTIVE
-              and e.remainingAmount > 0
-              and e.expireAt <= :baseDtm
-            order by e.memberId asc, e.expireAt asc, e.createdAt asc
-            """)
-    List<PntEarnMst> findExpirableEarns(@Param("baseDtm") LocalDateTime baseDtm);
 
     @Query("""
             select e

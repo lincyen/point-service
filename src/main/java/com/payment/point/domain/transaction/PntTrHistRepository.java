@@ -7,9 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PntTrHistRepository extends JpaRepository<PntTrHist, String> {
-
-    List<PntTrHist> findByMemberIdOrderByCreatedAtDesc(String memberId);
-
     @Query("""
             select h
             from PntTrHist h
@@ -27,8 +24,6 @@ public interface PntTrHistRepository extends JpaRepository<PntTrHist, String> {
     );
 
     List<PntTrHist> findByMemberIdAndOrderNo(String memberId, String orderNo);
-
-    List<PntTrHist> findByMemberIdAndOptxno(String memberId, String optxno);
 
     boolean existsByMemberIdAndOrderNo(String memberId, String orderNo);
 }

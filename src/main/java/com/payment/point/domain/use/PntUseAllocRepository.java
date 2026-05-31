@@ -8,6 +8,4 @@ public interface PntUseAllocRepository extends JpaRepository<PntUseAlloc, String
     List<PntUseAlloc> findByPtxnoOrderByPriorityAsc(String ptxno);
 
     List<PntUseAlloc> findByPtxnoAndRemainingAmountGreaterThanOrderByPriorityAsc(String ptxno, Long remainingAmount);
-
-    List<PntUseAlloc> findByEarnPtxno(String earnPtxno);
 }

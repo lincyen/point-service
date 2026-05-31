@@ -7,10 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface PntUseCancelHistRepository extends JpaRepository<PntUseCancelHist, String> {
 
-    List<PntUseCancelHist> findByUsePtxnoOrderByCancelSequenceAsc(String usePtxno);
+    List<PntUseCancelHist> findByUseCancelPtxno(String useCancelPointTransactionNo);
 
-    List<PntUseCancelHist> findByUseCancelPtxno(String useCancelPtxno);
-
-    @Query("select coalesce(max(h.cancelSequence), 0) from PntUseCancelHist h where h.usePtxno = :usePtxno")
-    int findMaxCancelSequence(@Param("usePtxno") String usePtxno);
+    @Query("select coalesce(max(h.cancelSequence), 0) from PntUseCancelHist h where h.usePtxno = :usePointTransactionNo")
+    int findMaxCancelSequence(@Param("usePointTransactionNo") String usePointTransactionNo);
 }
