@@ -210,10 +210,16 @@ public class PointFacadeService {
     }
 
     /**
-     * 포인트 사용취소를 처리한다.
-     *
-     * <p>동일 회원 요청 락은 AOP로 적용되고, 본 메서드는 단일 DB 트랜잭션 안에서
-     * 사용 Allocation을 차감 순서대로 복원한다. 원 적립건이 만료된 경우 신규 RESTORE 적립을 생성한다.</p>
+     * <b>포인트 사용취소 요청</b>
+     * <pre>
+     *     1. 금액 양수 체크, 주문번호 중복체크
+     *     2. 회원 잔액 조회
+     *     3. 사용취소 가능 여부 조회
+     *     4. 사용취소 거래번호 생성
+     *     5. 사용취소 금액만큼 회원 잔액 및 사용 Allocation 복원
+     *     6. 사용 원장 업데이트(JPA dirty checking) 및 회원별 최대 잔액 valid
+     *     7. 사용취소 거래 이력 등록
+     * </pre>
      *
      * @param memberId 회원아이디
      * @param request 사용취소 요청
@@ -221,21 +227,21 @@ public class PointFacadeService {
      */
     @MemberPointLocked
     @Transactional
-    public UseCancelResponse cancelUse(String memberId, UseCancelRequest request) {
+    public UseCancelResponse useCancel(String memberId, UseCancelRequest request) {
         pointEarnService.validatePositive(request.amount());
         pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
 
         LocalDateTime now = LocalDateTime.now();
         PntMemberBal balance = pointBalanceService.findBalance(memberId);
-        PntUseMst useMst = pointUseService.findUseForCancel(memberId, request.originalUsePtxno(), request.amount());
+        PntUseMst useMst = pointUseService.findUseForCancel(memberId, request.pointTransactionNo(), request.amount());
 
-        String useCancelPtxno = pointIdGenerator.generatePointTransactionNo();
-        restoreUseBalanceAndAllocation(useCancelPtxno, memberId, useMst, request.amount(), balance, now);
+        String useCancelPointTransactionNo = pointIdGenerator.generatePointTransactionNo();
+        restoreUseBalanceAndAllocation(useCancelPointTransactionNo, memberId, useMst, request.amount(), balance, now);
 
         useMst.cancel(request.amount());
         pointBalanceService.validateMaxBalance(balance);
         pointTransactionService.appendUseCancelTransaction(
-                useCancelPtxno,
+                useCancelPointTransactionNo,
                 useMst.getPtxno(),
                 memberId,
                 request.orderNo(),
@@ -244,22 +250,25 @@ public class PointFacadeService {
                 balance.getTotalAmount()
         );
 
-        return new UseCancelResponse(useCancelPtxno, memberId, request.amount(), balance.getTotalAmount());
+        return new UseCancelResponse(useCancelPointTransactionNo, memberId, request.amount(), balance.getTotalAmount());
     }
 
     /**
      * <b>사용취소 잔액 및 Allocation 복원</b>
      *
-     * <p>원 적립건이 만료되었으면 신규 RESTORE 적립으로 잔액을 복원하고, 만료 전이면 원 적립건을 복원한다.</p>
+     * <pre>
+     *     1. 원 적립건이 만료되었으면 신규 RESTORE 적립으로 잔액을 복원하고, 만료 전이면 원 적립건을 복원(포인트 적립 원장)
+     *     2. 사용 이력 업데이트
+     * </pre>
      *
-     * @param useCancelPtxno 사용취소 거래번호
+     * @param useCancelPointTransactionNo 사용취소 거래번호
      * @param memberId 회원아이디
      * @param useMst 원 사용 원장
      * @param cancelAmount 사용취소 금액
      * @param balance 회원 잔액
      * @param baseDtm 만료 여부 판단 기준 시각
      */
-    private void restoreUseBalanceAndAllocation(String useCancelPtxno, String memberId, PntUseMst useMst,
+    private void restoreUseBalanceAndAllocation(String useCancelPointTransactionNo, String memberId, PntUseMst useMst,
             long cancelAmount, PntMemberBal balance, LocalDateTime baseDtm) {
         List<PntUseAlloc> allocations = pointUseService.findCancelableAllocations(useMst.getPtxno());
         long remainingCancelAmount = cancelAmount;
@@ -287,7 +296,7 @@ public class PointFacadeService {
 
             allocation.cancel(allocationCancelAmount);
             pointUseService.saveCancelHistory(
-                    useCancelPtxno,
+                    useCancelPointTransactionNo,
                     useMst.getPtxno(),
                     allocation.getUseAllocId(),
                     memberId,
@@ -307,9 +316,16 @@ public class PointFacadeService {
     }
 
     /**
-     * 회원별 포인트 만료를 처리한다.
-     *
-     * <p>동일 회원 요청 락은 AOP로 적용되고, 기준 시각까지 만료된 회원의 적립 원장을 단일 DB 트랜잭션 안에서 처리한다.</p>
+     * <b>포인트 만료 요청</b>
+     * <pre>
+     *     1. 만료 기준 시각 생성
+     *     2. 회원 잔액 조회
+     *     3. 만료 대상 적립 원장 조회
+     *     4. 적립 원장별 잔여 금액만큼 회원 잔액 감소 및 누적 만료 금액 증가
+     *     5. 적립 원장 만료 처리(JPA dirty checking)
+     *     6. 만료 거래번호 생성 및 만료 거래 이력 등록
+     *     7. 만료 처리 건수와 만료 금액 합계 응답
+     * </pre>
      *
      * @param memberId 회원아이디
      * @param request 만료 요청
@@ -341,16 +357,45 @@ public class PointFacadeService {
         return new ExpireResponse(expiredCount, expiredAmountSum);
     }
 
+    /**
+     * <b></b>
+     * <pre>
+     * </pre>
+     * @param memberId 회원아이디
+     * @return
+     */
     @Transactional(readOnly = true)
     public BalanceResponse getBalance(String memberId) {
         return pointBalanceService.getBalance(memberId);
     }
 
+    /**
+     * <b>포인트 거래 이력 조회</b>
+     * <pre>
+     *     1. 검색 기간 조회
+     *     2. 회원 잔액 조회
+     * </pre>
+     * @param memberId 회원아이디
+     * @param startDate
+     * @param endDate
+     * @param txType
+     * @return
+     */
     @Transactional(readOnly = true)
     public HistoryResponse getHistories(String memberId, LocalDate startDate, LocalDate endDate, TxType txType) {
+        pointTransactionService.validateHistorySearchPeriod(startDate, endDate);
         return pointTransactionService.getHistories(memberId, startDate, endDate, txType);
     }
 
+    /**
+     * <b></b>
+     * <pre>
+     * </pre>
+     * @param memberId 회원아이디
+     * @param orderNo
+     * @param txType
+     * @return
+     */
     @Transactional(readOnly = true)
     public TransactionLookupResponse getTransactionByOrder(String memberId, String orderNo, TxType txType) {
         return pointTransactionService.getTransactionByOrder(memberId, orderNo, txType);

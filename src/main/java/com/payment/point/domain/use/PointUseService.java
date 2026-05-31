@@ -35,8 +35,15 @@ public class PointUseService {
         return pntUseMstRepository.save(new PntUseMst(ptxno, memberId, orderNo, amount));
     }
 
-    public PntUseMst findUseForCancel(String memberId, String originalUsePtxno, long cancelAmount) {
-        PntUseMst useMst = pntUseMstRepository.findByPtxno(originalUsePtxno)
+    /**
+     * <b>사용취소를 위한 원장 조회</b>
+     * @param memberId 회원아이디
+     * @param originalPointTransactionNo 취소 대상 사용 거래번호
+     * @param cancelAmount 사용취소금액
+     * @return 사용 원장
+     */
+    public PntUseMst findUseForCancel(String memberId, String originalPointTransactionNo, long cancelAmount) {
+        PntUseMst useMst = pntUseMstRepository.findByPtxno(originalPointTransactionNo)
                 .filter(value -> value.getMemberId().equals(memberId))
                 .orElseThrow(() -> new ApiException(ErrorCode.NO_POINT_HISTORY));
 
@@ -44,7 +51,7 @@ public class PointUseService {
             throw new ApiException(ErrorCode.NO_REMAIN_POINT);
         }
         if (useMst.getRemainingAmount() < cancelAmount) {
-            throw new ApiException(ErrorCode.PARTIAL_CANCEL_FAIL);
+            throw new ApiException(ErrorCode.CANCEL_AMOUNT_EXCEEDED);
         }
         return useMst;
     }

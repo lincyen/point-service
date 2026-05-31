@@ -83,7 +83,7 @@ public class PointController {
      */
     @PostMapping("/members/{memberId}/points/use-cancel")
     public ResponseEntity<UseCancelResponse> useCancel(@PathVariable String memberId, @Valid @RequestBody UseCancelRequest request) {
-        UseCancelResponse response = pointFacadeService.cancelUse(memberId, request);
+        UseCancelResponse response = pointFacadeService.useCancel(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -113,6 +113,9 @@ public class PointController {
     /**
      * <b>포인트 거래 이력 조회</b>
      * @param memberId 회원아이디
+     * @param startDate 조회 시작일
+     * @param endDate 조회 종료일
+     * @param txType 포인트 거래 유형
      * @return 거래이력조회응답
      */
     @GetMapping("/members/{memberId}/points/histories")

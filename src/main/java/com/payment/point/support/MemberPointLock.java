@@ -3,7 +3,9 @@ package com.payment.point.support;
 /**
  * 회원 단위 포인트 거래 요청 락.
  *
- * <p>동일 회원의 포인트 금액 변경 요청이 동시에 처리되지 않도록 진입 지점을 제한한다.</p>
+ * <pre>
+ *     동일 회원의 포인트 금액 변경 요청이 동시에 처리되지 않도록 진입 지점을 제한한다.
+ * </pre>
  */
 public interface MemberPointLock {
 

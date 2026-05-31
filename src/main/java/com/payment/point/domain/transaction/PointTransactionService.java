@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 /**
  * 포인트 거래 이력 도메인 서비스.
  *
- * <p>주문번호 중복 검증, 거래 이력 append, 회원별 거래 이력 조회를 담당한다.</p>
+ * <pre>
+ *     주문번호 중복 검증, 거래 이력 append, 회원별 거래 이력 조회를 담당한다.
+ * </pre>
  */
 @Service
 public class PointTransactionService {
@@ -188,31 +190,6 @@ public class PointTransactionService {
     }
 
     /**
-     * 회원의 포인트 거래 이력을 최신순으로 조회한다.
-     *
-     * @param memberId 회원아이디
-     * @return 포인트 거래 이력 응답 DTO
-     */
-    public HistoryResponse getHistories(String memberId) {
-        List<HistoryResponse.Item> histories = pntTrHistRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
-                .stream()
-                .map(history -> new HistoryResponse.Item(
-                        history.getPtxno(),
-                        history.getOptxno(),
-                        history.getOrderNo(),
-                        history.getOrderDtm(),
-                        history.getTxType(),
-                        history.getTxAmount(),
-                        history.getRemainingAmount(),
-                        history.getExpireAt(),
-                        history.getCreatedAt()
-                ))
-                .toList();
-
-        return new HistoryResponse(memberId, histories);
-    }
-
-    /**
      * 회원의 포인트 거래 이력을 조건에 맞게 최신순으로 조회한다.
      *
      * @param memberId 회원아이디
@@ -222,8 +199,6 @@ public class PointTransactionService {
      * @return 포인트 거래 이력 응답 DTO
      */
     public HistoryResponse getHistories(String memberId, LocalDate startDate, LocalDate endDate, TxType txType) {
-        validateHistorySearchPeriod(startDate, endDate);
-
         LocalDateTime startAt = startDate.atStartOfDay();
         LocalDateTime endAt = endDate.plusDays(1).atStartOfDay();
         List<HistoryResponse.Item> histories = pntTrHistRepository.findHistories(memberId, startAt, endAt, txType)
@@ -248,7 +223,12 @@ public class PointTransactionService {
         return new HistoryResponse(memberId, histories);
     }
 
-    private void validateHistorySearchPeriod(LocalDate startDate, LocalDate endDate) {
+    /**
+     *
+     * @param startDate
+     * @param endDate
+     */
+    public void validateHistorySearchPeriod(LocalDate startDate, LocalDate endDate) {
         if (startDate == null || endDate == null) {
             throw new ApiException(ErrorCode.INVALID_PARAMETER);
         }
@@ -263,8 +243,10 @@ public class PointTransactionService {
     /**
      * 회원과 주문번호로 거래 처리 여부를 조회한다.
      *
-     * <p>현재 주문번호는 동일 회원 내 모든 포인트 거래 유형에서 중복을 허용하지 않으므로,
-     * 거래 유형은 선택 필터로만 사용한다.</p>
+     * <pre>
+     *     현재 주문번호는 동일 회원 내 모든 포인트 거래 유형에서 중복을 허용하지 않으므로,
+     *     거래 유형은 선택 필터로만 사용한다.
+     * </pre>
      *
      * @param memberId 회원아이디
      * @param orderNo 클라이언트 주문번호

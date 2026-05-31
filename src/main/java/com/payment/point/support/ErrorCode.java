@@ -16,6 +16,7 @@ public enum ErrorCode {
     SYSTEM_ERROR("시스템 오류가 발생했습니다."),
     DUPLICATED_ORDER("이미 처리된 주문번호입니다."),
     NO_REMAIN_POINT("취소 가능한 잔여 포인트가 없습니다."),
+    CANCEL_AMOUNT_EXCEEDED("취소 요청 금액이 취소 가능한 잔여 금액을 초과했습니다."),
     INVALID_HISTORY_PERIOD("시작일은 종료일보다 이전이어야 합니다."),
     HISTORY_PERIOD_EXCEEDED("조회 가능 기간이 아닙니다."),
     NO_HISTORY_RESULT("조회 결과가 없습니다."),

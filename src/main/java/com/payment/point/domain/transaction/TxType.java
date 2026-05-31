@@ -1,7 +1,7 @@
 package com.payment.point.domain.transaction;
 
 /**
- * 포인트 거래 유형.
+ * 포인트 거래 유형
  */
 public enum TxType {
     /** 포인트 적립 거래 */

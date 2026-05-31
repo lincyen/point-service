@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 /**
  * 회원별 포인트 잔액 도메인 서비스.
  *
- * <p>회원 잔액 row 생성/조회, 잔액 증감, 최대 보유 가능 포인트 검증을 담당한다.</p>
+ * <pre>
+ *     회원 잔액 row 생성/조회, 잔액 증감, 최대 보유 가능 포인트 검증을 담당한다.
+ * </pre>
  */
 @Service
 public class PointBalanceService {

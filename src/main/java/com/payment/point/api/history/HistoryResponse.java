@@ -18,8 +18,8 @@ public record HistoryResponse(
     /**
      * 포인트 거래 이력
      *
-     * @param ptxno 포인트 거래번호
-     * @param optxno 원 포인트 거래번호
+     * @param pointTransactionNo 포인트 거래번호
+     * @param orignalPointTransactionNo 원 포인트 거래번호
      * @param orderNo 클라이언트 주문번호
      * @param orderDtm 클라이언트 주문/요청 시각
      * @param txType 거래 유형
@@ -29,8 +29,8 @@ public record HistoryResponse(
      * @param createdAt 서버 생성 시각
      */
     public record Item(
-            String ptxno,
-            String optxno,
+            String pointTransactionNo,
+            String orignalPointTransactionNo,
             String orderNo,
             LocalDateTime orderDtm,
             TxType txType,

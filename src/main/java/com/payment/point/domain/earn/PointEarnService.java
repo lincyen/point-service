@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 /**
  * 포인트 적립 원장 도메인 서비스.
  *
- * <p>적립 정책 검증, 적립 원장 생성/조회, 만료 대상 조회, 사용취소 시 RESTORE 적립 생성을 담당한다.</p>
+ * <pre>
+ *     적립 정책 검증, 적립 원장 생성/조회, 만료 대상 조회, 사용취소 시 RESTORE 적립 생성을 담당한다.
+ * </pre>
  */
 @Service
 @AllArgsConstructor

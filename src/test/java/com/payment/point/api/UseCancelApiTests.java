@@ -3,6 +3,7 @@ package com.payment.point.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.earn.EarnResponse;
@@ -17,7 +18,12 @@ import com.payment.point.domain.use.PntUseAlloc;
 import com.payment.point.domain.use.PntUseAllocRepository;
 import com.payment.point.domain.use.PntUseCancelHist;
 import com.payment.point.domain.use.PntUseCancelHistRepository;
+import com.payment.point.domain.use.PntUseMst;
+import com.payment.point.domain.use.PntUseMstRepository;
 import com.payment.point.domain.use.RestoreType;
+import com.payment.point.domain.use.UseStatus;
+import com.payment.point.support.ApiException;
+import com.payment.point.support.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,6 +41,9 @@ class UseCancelApiTests extends PointApiTestSupport {
     private PntUseCancelHistRepository pntUseCancelHistRepository;
 
     @Autowired
+    private PntUseMstRepository pntUseMstRepository;
+
+    @Autowired
     private PntEarnMstRepository pntEarnMstRepository;
 
     @Autowired
@@ -47,15 +56,111 @@ class UseCancelApiTests extends PointApiTestSupport {
         pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-API-EARN"), null, EarnType.NORMAL, 1_000, "P10D"));
         UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-CANCEL-API-USE"), null, 400));
 
-        UseCancelResponse cancelResponse = pointFacadeService.cancelUse(
+        UseCancelResponse cancelResponse = pointFacadeService.useCancel(
                 memberId,
-                new UseCancelRequest(orderNo("USE-CANCEL-API"), null, useResponse.ptxno(), 150)
+                new UseCancelRequest(orderNo("USE-CANCEL-API"), null, useResponse.pointTransactionNo(), 150)
         );
 
-        assertPointId(cancelResponse.ptxno());
+        assertPointId(cancelResponse.pointTransactionNo());
         assertEquals(memberId, cancelResponse.memberId());
         assertEquals(150, cancelResponse.amount());
         assertEquals(750, cancelResponse.remainingAmount());
+    }
+
+    @Test
+    void useCancelAllowsMultiplePartialCancelsUntilRemainingAmount() {
+        String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-PARTIAL-EARN"), null,
+                EarnType.NORMAL, 1_000, "P10D"));
+        UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-CANCEL-PARTIAL-USE"), null, 600));
+
+        UseCancelResponse firstCancel = pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-PARTIAL-1"), null, useResponse.pointTransactionNo(), 100)
+        );
+        UseCancelResponse secondCancel = pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-PARTIAL-2"), null, useResponse.pointTransactionNo(), 200)
+        );
+
+        assertEquals(500, firstCancel.remainingAmount());
+        assertEquals(700, secondCancel.remainingAmount());
+    }
+
+    @Test
+    void useCancelUpdatesUseMasterAsPartialCancel() {
+        String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-MST-EARN"), null,
+                EarnType.NORMAL, 1_000, "P10D"));
+        UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-CANCEL-MST-USE"), null, 600));
+
+        pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-MST"), null, useResponse.pointTransactionNo(), 100)
+        );
+
+        PntUseMst useMst = pntUseMstRepository.findById(useResponse.pointTransactionNo()).orElseThrow();
+
+        assertEquals(100, useMst.getCancelAmount());
+        assertEquals(500, useMst.getRemainingAmount());
+        assertEquals(UseStatus.PARTIAL_CNCL, useMst.getStatus());
+    }
+
+    @Test
+    void useCancelRejectsAmountGreaterThanRemainingAmountAfterPartialCancel() {
+        String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-REMAIN-EARN"), null,
+                EarnType.NORMAL, 1_000, "P10D"));
+        UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-CANCEL-REMAIN-USE"), null, 300));
+        pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-REMAIN-1"), null, useResponse.pointTransactionNo(), 200)
+        );
+
+        ApiException exception = assertThrows(ApiException.class, () -> pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-REMAIN-2"), null, useResponse.pointTransactionNo(), 101)
+        ));
+
+        assertEquals(ErrorCode.CANCEL_AMOUNT_EXCEEDED, exception.getErrorCode());
+    }
+
+    @Test
+    void useCancelRejectsAlreadyFullyCanceledUseMaster() {
+        String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-FULL-EARN"), null,
+                EarnType.NORMAL, 1_000, "P10D"));
+        UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-CANCEL-FULL-USE"), null, 300));
+        pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-FULL-1"), null, useResponse.pointTransactionNo(), 300)
+        );
+
+        ApiException exception = assertThrows(ApiException.class, () -> pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-FULL-2"), null, useResponse.pointTransactionNo(), 1)
+        ));
+
+        PntUseMst useMst = pntUseMstRepository.findById(useResponse.pointTransactionNo()).orElseThrow();
+
+        assertEquals(ErrorCode.NO_REMAIN_POINT, exception.getErrorCode());
+        assertEquals(UseStatus.CNCL, useMst.getStatus());
+        assertEquals(0, useMst.getRemainingAmount());
+    }
+
+    @Test
+    void useCancelRejectsAmountGreaterThanCancelableRemainingAmount() {
+        String memberId = memberId();
+        pointFacadeService.earn(memberId, new EarnRequest(orderNo("USE-CANCEL-EXCEED-EARN"), null,
+                EarnType.NORMAL, 1_000, "P10D"));
+        UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-CANCEL-EXCEED-USE"), null, 300));
+
+        ApiException exception = assertThrows(ApiException.class, () -> pointFacadeService.useCancel(
+                memberId,
+                new UseCancelRequest(orderNo("USE-CANCEL-EXCEED"), null, useResponse.pointTransactionNo(), 301)
+        ));
+
+        assertEquals(ErrorCode.CANCEL_AMOUNT_EXCEEDED, exception.getErrorCode());
     }
 
     @Test
@@ -67,12 +172,12 @@ class UseCancelApiTests extends PointApiTestSupport {
                 EarnType.NORMAL, 500, "P10D"));
         UseResponse useResponse = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-CANCEL-ASC-USE"), null, 1_200));
 
-        UseCancelResponse cancelResponse = pointFacadeService.cancelUse(
+        UseCancelResponse cancelResponse = pointFacadeService.useCancel(
                 memberId,
-                new UseCancelRequest(orderNo("USE-CANCEL-ASC"), null, useResponse.ptxno(), 1_100)
+                new UseCancelRequest(orderNo("USE-CANCEL-ASC"), null, useResponse.pointTransactionNo(), 1_100)
         );
 
-        List<PntUseAlloc> allocations = pntUseAllocRepository.findByPtxnoOrderByPriorityAsc(useResponse.ptxno());
+        List<PntUseAlloc> allocations = pntUseAllocRepository.findByPtxnoOrderByPriorityAsc(useResponse.pointTransactionNo());
 
         assertEquals(1_400, cancelResponse.remainingAmount());
         assertEquals(2, allocations.size());
@@ -91,15 +196,15 @@ class UseCancelApiTests extends PointApiTestSupport {
                 memberId,
                 new UseRequest(orderNo("USE-CANCEL-EXPIRED-USE"), null, 1_200)
         );
-        expireEarn(earnA.ptxno());
+        expireEarn(earnA.pointTransactionNo());
 
-        UseCancelResponse cancelResponse = pointFacadeService.cancelUse(
+        UseCancelResponse cancelResponse = pointFacadeService.useCancel(
                 memberId,
-                new UseCancelRequest(orderNo("USE-CANCEL-EXPIRED"), null, useResponse.ptxno(), 1_100)
+                new UseCancelRequest(orderNo("USE-CANCEL-EXPIRED"), null, useResponse.pointTransactionNo(), 1_100)
         );
 
-        List<PntUseAlloc> allocations = pntUseAllocRepository.findByPtxnoOrderByPriorityAsc(useResponse.ptxno());
-        List<PntUseCancelHist> histories = pntUseCancelHistRepository.findByUseCancelPtxno(cancelResponse.ptxno());
+        List<PntUseAlloc> allocations = pntUseAllocRepository.findByPtxnoOrderByPriorityAsc(useResponse.pointTransactionNo());
+        List<PntUseCancelHist> histories = pntUseCancelHistRepository.findByUseCancelPtxno(cancelResponse.pointTransactionNo());
         PntUseCancelHist expiredRestoreHistory = histories.stream()
                 .filter(history -> history.getRestoreType() == RestoreType.NEW_EARN)
                 .findFirst()

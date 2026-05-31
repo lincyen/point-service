@@ -23,8 +23,8 @@ public record TransactionLookupResponse(
     /**
      * 포인트 거래 이력
      *
-     * @param ptxno 포인트 거래번호
-     * @param optxno 원 포인트 거래번호
+     * @param pointTransactionNo 포인트 거래번호
+     * @param orignalPointTransactionNo 원 포인트 거래번호
      * @param orderDtm 클라이언트 주문/요청 시각
      * @param txType 거래 유형
      * @param amount 거래 금액
@@ -33,8 +33,8 @@ public record TransactionLookupResponse(
      * @param createdAt 서버 생성 시각
      */
     public record Item(
-            String ptxno,
-            String optxno,
+            String pointTransactionNo,
+            String orignalPointTransactionNo,
             LocalDateTime orderDtm,
             TxType txType,
             long amount,

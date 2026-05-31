@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component;
 /**
  * 회원 단위 포인트 거래 요청 락 Aspect.
  *
- * <p>트랜잭션 Aspect보다 먼저 실행되어 memberId 기준 로컬 락을 획득한 뒤 비즈니스 메서드를 진행한다.</p>
+ * <pre>
+ *     트랜잭션 Aspect보다 먼저 실행되어 memberId 기준 로컬 락을 획득한 뒤 비즈니스 메서드를 진행한다.
+ * </pre>
  */
 @Aspect
 @Component

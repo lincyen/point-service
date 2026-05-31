@@ -32,7 +32,7 @@ class EarnApiTests extends PointApiTestSupport {
                 new EarnRequest(orderNo("EARN-API"), null, EarnType.NORMAL, 1_000, "P10D")
         );
 
-        assertPointId(response.ptxno());
+        assertPointId(response.pointTransactionNo());
         assertEquals(memberId, response.memberId());
         assertEquals(1_000, response.amount());
         assertEquals(1_000, response.remainingAmount());
@@ -83,7 +83,7 @@ class EarnApiTests extends PointApiTestSupport {
                 new EarnRequest(orderNo("EARN-API"), null, EarnType.NORMAL, 100, null)
         );
 
-        PntEarnMst earn = pntEarnMstRepository.findById(response.ptxno()).orElseThrow();
+        PntEarnMst earn = pntEarnMstRepository.findById(response.pointTransactionNo()).orElseThrow();
         LocalDateTime expectedExpireAt = beforeEarn.plusDays(365);
         Duration difference = Duration.between(expectedExpireAt, earn.getExpireAt()).abs();
 

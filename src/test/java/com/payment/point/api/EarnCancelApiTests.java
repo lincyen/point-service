@@ -23,10 +23,10 @@ class EarnCancelApiTests extends PointApiTestSupport {
 
         EarnCancelResponse cancelResponse = pointFacadeService.earnCancel(
                 memberId,
-                new EarnCancelRequest(orderNo("EARN-CANCEL-API"), null, earnResponse.ptxno(), 500)
+                new EarnCancelRequest(orderNo("EARN-CANCEL-API"), null, earnResponse.pointTransactionNo(), 500)
         );
 
-        assertPointId(cancelResponse.ptxno());
+        assertPointId(cancelResponse.pointTransactionNo());
         assertEquals(memberId, cancelResponse.memberId());
         assertEquals(500, cancelResponse.amount());
         assertEquals(0, cancelResponse.remainingAmount());

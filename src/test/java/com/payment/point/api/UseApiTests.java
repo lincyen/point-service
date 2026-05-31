@@ -22,7 +22,7 @@ class UseApiTests extends PointApiTestSupport {
 
         UseResponse response = pointFacadeService.use(memberId, new UseRequest(orderNo("USE-API"), null, 400));
 
-        assertPointId(response.ptxno());
+        assertPointId(response.pointTransactionNo());
         assertEquals(memberId, response.memberId());
         assertEquals(400, response.amount());
         assertEquals(600, response.remainingAmount());

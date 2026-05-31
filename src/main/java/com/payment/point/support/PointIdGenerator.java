@@ -8,8 +8,10 @@ import org.springframework.stereotype.Component;
 /**
  * 포인트 시스템의 26자리 숫자 문자열 ID 생성기.
  *
- * <p>DB 현재시각 17자리({@code yyyyMMddHHmmssSSS})와 DB sequence 9자리를 결합해
- * 거래번호와 내부 상세 ID를 생성한다.</p>
+ * <pre>
+ *     DB 현재시각 17자리({@code yyyyMMddHHmmssSSS})와 DB sequence 9자리를 결합해
+ *     거래번호와 내부 상세 ID를 생성한다.
+ * </pre>
  */
 @Component
 public class PointIdGenerator {
