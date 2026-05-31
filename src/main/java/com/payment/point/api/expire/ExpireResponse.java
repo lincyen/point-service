@@ -1,4 +1,4 @@
-package com.payment.point.api.common;
+package com.payment.point.api.expire;
 
 /**
  * 포인트 만료 처리 응답
