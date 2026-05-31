@@ -112,7 +112,11 @@ public class PntEarnMst {
     }
 
     /**
-     * <b>포인트 사용</b>
+     * <b>포인트 사용 처리</b>
+     * <pre>
+     *     요청액이 잔액보다 많으면 IllegalArgumentException
+     *     잔액이 0 이 되면 status 를 USED_UP 으로 변경
+     * </pre>
      * @param amount 사용금액
      */
     public void use(long amount) {

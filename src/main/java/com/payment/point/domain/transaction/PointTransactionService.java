@@ -190,13 +190,13 @@ public class PointTransactionService {
     }
 
     /**
-     * 회원의 포인트 거래 이력을 조건에 맞게 최신순으로 조회한다.
+     * <b>포인트 거래 이력 조회</b>
      *
      * @param memberId 회원아이디
      * @param startDate 조회 시작일
      * @param endDate 조회 종료일
-     * @param txType 거래 유형 nullable
-     * @return 포인트 거래 이력 응답 DTO
+     * @param txType 거래 유형 (optional)
+     * @return 포인트 거래 이력 응답
      */
     public HistoryResponse getHistories(String memberId, LocalDate startDate, LocalDate endDate, TxType txType) {
         LocalDateTime startAt = startDate.atStartOfDay();
@@ -224,9 +224,14 @@ public class PointTransactionService {
     }
 
     /**
-     *
-     * @param startDate
-     * @param endDate
+     * <b>이력 조회 기간 valid</b>
+     * <pre>
+     *     startDate 또는 endDate 가 없는 경우 INVALID_PARAMETER
+     *     startDate 가 endDate 보다 이후인 경우 INVALID_HISTORY_PERIOD
+     *     조회기간이 3개월 이상인 경우 HISTORY_PERIOD_EXCEEDED
+     * </pre>
+     * @param startDate 조회 시작일
+     * @param endDate 조회 종료일
      */
     public void validateHistorySearchPeriod(LocalDate startDate, LocalDate endDate) {
         if (startDate == null || endDate == null) {
@@ -241,17 +246,16 @@ public class PointTransactionService {
     }
 
     /**
-     * 회원과 주문번호로 거래 처리 여부를 조회한다.
+     * <b>회원아이디와 주문번호로 거래정보 조회</b>
      *
      * <pre>
-     *     현재 주문번호는 동일 회원 내 모든 포인트 거래 유형에서 중복을 허용하지 않으므로,
-     *     거래 유형은 선택 필터로만 사용한다.
+     *     네트워크 유실 등으로 처리 응답을 받지 못했을 경우, 요청 건이 처리되었는지 확인하기 위해 사용
      * </pre>
      *
      * @param memberId 회원아이디
      * @param orderNo 클라이언트 주문번호
-     * @param txType 거래 유형 nullable
-     * @return 거래 조회 응답 DTO
+     * @param txType 거래 유형 (optional)
+     * @return 거래 조회 응답
      */
     public TransactionLookupResponse getTransactionByOrder(String memberId, String orderNo, TxType txType) {
         Optional<PntTrHist> transaction = pntTrHistRepository.findByMemberIdAndOrderNo(memberId, orderNo)

@@ -3,7 +3,7 @@ package com.payment.point.api.common;
 import com.payment.point.support.ErrorCode;
 
 /**
- * API 오류 응답 DTO.
+ * API 오류 응답
  *
  * @param code 오류 코드
  * @param message 오류 메시지

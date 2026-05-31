@@ -56,10 +56,10 @@ public class PointBalanceService {
     }
 
     /**
-     * 회원 잔액 조회 응답을 생성한다.
+     * <b>회원 잔액 조회</b>
      *
      * @param memberId 회원아이디
-     * @return 회원 잔액 응답 DTO
+     * @return 회원 잔액 응답
      */
     public BalanceResponse getBalance(String memberId) {
         PntMemberBal balance = findBalance(memberId);

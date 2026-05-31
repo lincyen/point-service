@@ -31,6 +31,9 @@ import com.payment.point.support.PointIdGenerator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,7 +96,7 @@ public class PointFacadeService {
      * <pre>
      *     1. 금액 양수 체크, 주문번호 중복체크
      *     2. 회원 잔액 조회
-     *     3. 적립취소 가능 여부 조회
+     *     3. 적립취소 가능 여부 조회 및 valid
      *     4. 회원별 포인트 잔액 감소
      *     5. 적립 원장 업데이트(JPA dirty checking) 및 거래이력 등록
      * </pre>
@@ -183,9 +186,9 @@ public class PointFacadeService {
     }
 
     /**
-     * <b>사용 원장 정리</b>
+     * <b>적립원장 차감 및 사용 원장 정리</b>
      * <pre>
-     *    사용 우선순위에 따라 적립 원장을 차감하고, 적립 원장별 사용 Allocation을 생성
+     *    사용 우선순위에 따라 적립 원장을 차감하고, 적립 원장별 사용 Allocation 을 생성
      * </pre>
      *
      * @param pointTransactionNo 사용 거래번호
@@ -194,15 +197,15 @@ public class PointFacadeService {
      * @param baseDtm 사용 가능 적립 원장 판단 기준 시각
      */
     private void organizeUseLedger(String pointTransactionNo, String memberId, long useAmount, LocalDateTime baseDtm) {
-        List<PntEarnMst> earns = pointEarnService.findUsableEarns(memberId, baseDtm);
+        List<PntEarnMst> earnMasters = pointEarnService.findUsableEarns(memberId, baseDtm);
         long remainingUseAmount = useAmount;
         int priority = 1;
-        for (PntEarnMst earn : earns) {
+        for (PntEarnMst earnMst : earnMasters) {
             if (remainingUseAmount == 0) break;
-            long consumeAmount = Math.min(earn.getRemainingAmount(), remainingUseAmount);
-            earn.use(consumeAmount);
+            long consumeAmount = Math.min(earnMst.getRemainingAmount(), remainingUseAmount);
+            earnMst.use(consumeAmount);
 
-            pointUseService.createAllocation(pointTransactionNo, earn.getPtxno(), memberId, priority++, consumeAmount, earn.getExpireAt());
+            pointUseService.createAllocation(pointTransactionNo, earnMst.getPtxno(), memberId, priority++, consumeAmount, earnMst.getExpireAt());
             remainingUseAmount -= consumeAmount;
         }
 
@@ -257,8 +260,12 @@ public class PointFacadeService {
      * <b>사용취소 잔액 및 Allocation 복원</b>
      *
      * <pre>
-     *     1. 원 적립건이 만료되었으면 신규 RESTORE 적립으로 잔액을 복원하고, 만료 전이면 원 적립건을 복원(포인트 적립 원장)
-     *     2. 사용 이력 업데이트
+     *     1. 사용 거래번호 기반 잔액이 있는 사용 Allocation 목록 추출(priority order)
+     *     2. 사용 Allocation과 연결된 원 적립 원장을 일괄 조회
+     *     3. 취소 순번 획득
+     *     4-1. 원 적립건이 만료되었으면 신규 RESTORE 적립으로 잔액을 복원
+     *     4-2. 원 적립건이 만료 전이면 원적립건을 복원
+     *     5. 사용 취소 이력 등록
      * </pre>
      *
      * @param useCancelPointTransactionNo 사용취소 거래번호
@@ -271,8 +278,15 @@ public class PointFacadeService {
     private void restoreUseBalanceAndAllocation(String useCancelPointTransactionNo, String memberId, PntUseMst useMst,
             long cancelAmount, PntMemberBal balance, LocalDateTime baseDtm) {
         List<PntUseAlloc> allocations = pointUseService.findCancelableAllocations(useMst.getPtxno());
+        Map<String, PntEarnMst> originalEarnMap = pointEarnService.findAllOriginalEarns(
+                        allocations.stream()
+                                .map(PntUseAlloc::getEarnPtxno)
+                                .distinct()
+                                .toList()
+                ).stream()
+                .collect(Collectors.toMap(PntEarnMst::getPtxno, Function.identity()));
         long remainingCancelAmount = cancelAmount;
-        int cancelSequence = pointUseService.nextCancelSequence(useMst.getPtxno());
+        int cancelSequence = pointUseService.nextCancelSequence(useMst.getPtxno()); //취소 순번
 
         for (PntUseAlloc allocation : allocations) {
             if (remainingCancelAmount == 0) {
@@ -280,7 +294,10 @@ public class PointFacadeService {
             }
 
             long allocationCancelAmount = Math.min(allocation.getRemainingAmount(), remainingCancelAmount);
-            PntEarnMst originalEarn = pointEarnService.findOriginalEarn(allocation.getEarnPtxno());
+            PntEarnMst originalEarn = originalEarnMap.get(allocation.getEarnPtxno());
+            if (originalEarn == null) {
+                throw new ApiException(ErrorCode.NO_POINT_HISTORY);
+            }
 
             String restorePtxno = null;
             RestoreType restoreType;
@@ -318,13 +335,12 @@ public class PointFacadeService {
     /**
      * <b>포인트 만료 요청</b>
      * <pre>
-     *     1. 만료 기준 시각 생성
-     *     2. 회원 잔액 조회
-     *     3. 만료 대상 적립 원장 조회
-     *     4. 적립 원장별 잔여 금액만큼 회원 잔액 감소 및 누적 만료 금액 증가
-     *     5. 적립 원장 만료 처리(JPA dirty checking)
-     *     6. 만료 거래번호 생성 및 만료 거래 이력 등록
-     *     7. 만료 처리 건수와 만료 금액 합계 응답
+     *     1. 회원 잔액 조회
+     *     2. 회원별 만료 처리 대상 조회
+     *     3. 적립 원장별 잔여 금액만큼 회원 잔액 감소 및 누적 만료 금액 증가
+     *     4. 적립 원장 만료 처리(JPA dirty checking)
+     *     5. 만료 거래번호 생성 및 만료 거래 이력 등록
+     *     6. 만료 처리 건수와 만료 금액 합계 응답
      * </pre>
      *
      * @param memberId 회원아이디
@@ -347,8 +363,8 @@ public class PointFacadeService {
             balance.increaseExpired(expiredAmount);
             earn.expireAll();
 
-            String ptxno = pointIdGenerator.generatePointTransactionNo();
-            pointTransactionService.appendExpireTransaction(ptxno, earn, expiredAmount, balance.getTotalAmount());
+            String pointTransactionNo = pointIdGenerator.generatePointTransactionNo();
+            pointTransactionService.appendExpireTransaction(pointTransactionNo, earn, expiredAmount, balance.getTotalAmount());
 
             expiredCount++;
             expiredAmountSum += expiredAmount;
@@ -358,11 +374,9 @@ public class PointFacadeService {
     }
 
     /**
-     * <b></b>
-     * <pre>
-     * </pre>
+     * <b>회원 잔액 조회</b>
      * @param memberId 회원아이디
-     * @return
+     * @return 포인트 잔액 조회 응답
      */
     @Transactional(readOnly = true)
     public BalanceResponse getBalance(String memberId) {
@@ -372,14 +386,14 @@ public class PointFacadeService {
     /**
      * <b>포인트 거래 이력 조회</b>
      * <pre>
-     *     1. 검색 기간 조회
+     *     1. 이력 조회 기간 valid
      *     2. 회원 잔액 조회
      * </pre>
      * @param memberId 회원아이디
-     * @param startDate
-     * @param endDate
-     * @param txType
-     * @return
+     * @param startDate 조회 시작일
+     * @param endDate 조회 종료일
+     * @param txType {@link TxType 포인트 거래 유형} (optional)
+     * @return 포인트 거래 이력 조회 응답
      */
     @Transactional(readOnly = true)
     public HistoryResponse getHistories(String memberId, LocalDate startDate, LocalDate endDate, TxType txType) {
@@ -388,13 +402,11 @@ public class PointFacadeService {
     }
 
     /**
-     * <b></b>
-     * <pre>
-     * </pre>
+     * <b>주문번호 기반 포인트 거래 조회</b>
      * @param memberId 회원아이디
-     * @param orderNo
-     * @param txType
-     * @return
+     * @param orderNo 주문번호
+     * @param txType {@link TxType 포인트 거래 유형}
+     * @return 주문번호 기반 포인트 거래 조회 응답
      */
     @Transactional(readOnly = true)
     public TransactionLookupResponse getTransactionByOrder(String memberId, String orderNo, TxType txType) {

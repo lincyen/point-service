@@ -56,7 +56,7 @@ public class PointEarnService {
     }
 
     /**
-     * 외부 적립 요청에서 허용되는 적립 유형인지 검증한다.
+     * <b>적립 요청 타입 검증(null, RESTORE 비허용)</b>
      *
      * @param earnType 적립 유형
      */
@@ -146,6 +146,9 @@ public class PointEarnService {
 
     /**
      * <b>사용 가능 적립 거래 조회</b>
+     * <pre>
+     *     정책에 따라 사용 순서를 정의, 정의된 순서로 응답
+     * </pre>
      *
      * @param memberId 회원아이디
      * @param baseDtm 사용 가능 여부 판단 기준 시각
@@ -156,17 +159,7 @@ public class PointEarnService {
     }
 
     /**
-     * 만료 처리 대상 적립 원장을 조회한다.
-     *
-     * @param baseDtm 만료 기준 시각
-     * @return 만료 대상 적립 원장 목록
-     */
-    public List<PntEarnMst> findExpirableEarns(LocalDateTime baseDtm) {
-        return pntEarnMstRepository.findExpirableEarns(baseDtm);
-    }
-
-    /**
-     * 회원별 만료 처리 대상 적립 원장을 조회한다.
+     * <b>회원별 만료 처리 대상 조회</b>
      *
      * @param memberId 회원아이디
      * @param baseDtm 만료 기준 시각
@@ -177,14 +170,13 @@ public class PointEarnService {
     }
 
     /**
-     * 사용 Allocation에 연결된 원 적립 원장을 조회한다.
+     * <b>사용 Allocation에 연결된 원 적립 원장 일괄 조회</b>
      *
-     * @param earnPtxno 원 적립 거래번호
-     * @return 원 적립 원장
+     * @param earnPointTransactionNos 원 적립 거래번호 목록
+     * @return 원 적립 원장 목록
      */
-    public PntEarnMst findOriginalEarn(String earnPtxno) {
-        return pntEarnMstRepository.findById(earnPtxno)
-                .orElseThrow(() -> new ApiException(ErrorCode.NO_POINT_HISTORY));
+    public List<PntEarnMst> findAllOriginalEarns(List<String> earnPointTransactionNos) {
+        return pntEarnMstRepository.findAllById(earnPointTransactionNos);
     }
 
     /**
@@ -196,10 +188,10 @@ public class PointEarnService {
      * @return 생성된 RESTORE 적립 거래번호
      */
     public String createRestoreEarn(String memberId, long amount, LocalDateTime now) {
-        String restorePtxno = pointIdGenerator.generatePointTransactionNo();
+        String restorePointTransactionNo = pointIdGenerator.generatePointTransactionNo();
         LocalDateTime restoreExpireAt = now.plus(parseExpirePeriod(pointPolicyProperties.earn().defaultExpirePeriod()));
-        pntEarnMstRepository.save(new PntEarnMst(restorePtxno, memberId, EarnType.RESTORE, amount, restoreExpireAt));
-        return restorePtxno;
+        pntEarnMstRepository.save(new PntEarnMst(restorePointTransactionNo, memberId, EarnType.RESTORE, amount, restoreExpireAt));
+        return restorePointTransactionNo;
     }
 
     /**

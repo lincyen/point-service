@@ -113,9 +113,9 @@ public class PointController {
     /**
      * <b>포인트 거래 이력 조회</b>
      * @param memberId 회원아이디
-     * @param startDate 조회 시작일
-     * @param endDate 조회 종료일
-     * @param txType 포인트 거래 유형
+     * @param startDate 조회 시작일(yyyy-mm-dd)
+     * @param endDate 조회 종료일(yyyy-mm-dd)
+     * @param txType {@link TxType 포인트 거래 유형}
      * @return 거래이력조회응답
      */
     @GetMapping("/members/{memberId}/points/histories")
@@ -131,7 +131,7 @@ public class PointController {
      * <b>주문번호 기반 포인트 거래 조회</b>
      * @param memberId 회원아이디
      * @param orderNo 클라이언트 주문번호
-     * @param txType 거래 유형 optional
+     * @param txType {@link TxType 포인트 거래 유형(optional)}
      * @return 주문번호 기반 거래조회응답
      */
     @GetMapping("/members/{memberId}/points/transactions/by-order")

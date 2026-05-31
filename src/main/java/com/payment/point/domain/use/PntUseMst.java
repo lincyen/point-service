@@ -61,14 +61,14 @@ public class PntUseMst {
     private LocalDateTime updatedAt;
 
     /**
-     * <b>사용 원장 등록</b>
-     * @param ptxno 사용 거래번호
-     * @param memberId
-     * @param orderNo
-     * @param useAmount
+     * <b>사용 원장 등록(INSERT)</b>
+     * @param pointTransactionNo 사용 거래번호
+     * @param memberId 회원아이디
+     * @param orderNo 클라이언트 주문번호
+     * @param useAmount 사용 금액
      */
-    public PntUseMst(String ptxno, String memberId, String orderNo, Long useAmount) {
-        this.ptxno = ptxno;
+    public PntUseMst(String pointTransactionNo, String memberId, String orderNo, Long useAmount) {
+        this.ptxno = pointTransactionNo;
         this.memberId = memberId;
         this.orderNo = orderNo;
         this.useAmount = useAmount;
