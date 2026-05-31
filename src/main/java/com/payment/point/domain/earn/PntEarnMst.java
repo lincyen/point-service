@@ -104,10 +104,6 @@ public class PntEarnMst {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public boolean isManual() {
-        return earnType == EarnType.MANUAL;
-    }
-
     public boolean isExpiredOn(LocalDate baseDate) {
         return !expireDate.isAfter(baseDate);
     }
