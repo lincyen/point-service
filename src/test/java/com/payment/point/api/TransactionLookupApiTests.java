@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.payment.point.api.earn.EarnRequest;
 import com.payment.point.api.earn.EarnResponse;
@@ -17,8 +20,15 @@ import com.payment.point.domain.transaction.TxType;
 import com.payment.point.support.ApiException;
 import com.payment.point.support.ErrorCode;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
 
+@AutoConfigureMockMvc
 class TransactionLookupApiTests extends PointApiTestSupport {
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
     void getTransactionByOrderReturnsEarnTransaction() {
@@ -99,5 +109,36 @@ class TransactionLookupApiTests extends PointApiTestSupport {
                 () -> pointFacadeService.getTransactionByOrder(memberId, orderNo("LOOKUP-UNKNOWN"), null));
 
         assertEquals(ErrorCode.INVALID_USER, exception.getErrorCode());
+    }
+
+    @Test
+    void getTransactionByOrderApiRejectsMissingOrderNo() throws Exception {
+        mockMvc.perform(get("/v1/members/{memberId}/points/transactions/by-order", memberId()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.name()));
+    }
+
+    @Test
+    void getTransactionByOrderApiRejectsEmptyOrderNo() throws Exception {
+        mockMvc.perform(get("/v1/members/{memberId}/points/transactions/by-order", memberId())
+                        .param("orderNo", ""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.name()));
+    }
+
+    @Test
+    void getTransactionByOrderApiRejectsBlankOrderNo() throws Exception {
+        mockMvc.perform(get("/v1/members/{memberId}/points/transactions/by-order", memberId())
+                        .param("orderNo", " "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.name()));
+    }
+
+    @Test
+    void getTransactionByOrderApiRejectsTooLongOrderNo() throws Exception {
+        mockMvc.perform(get("/v1/members/{memberId}/points/transactions/by-order", memberId())
+                        .param("orderNo", "A".repeat(41)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.name()));
     }
 }

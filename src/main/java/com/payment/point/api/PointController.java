@@ -15,7 +15,9 @@ import com.payment.point.api.use.UseRequest;
 import com.payment.point.api.use.UseResponse;
 import com.payment.point.application.PointFacadeService;
 import com.payment.point.domain.transaction.TxType;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
@@ -136,7 +138,7 @@ public class PointController {
      */
     @GetMapping("/members/{memberId}/points/transactions/by-order")
     public ResponseEntity<TransactionLookupResponse> getTransactionByOrder(@PathVariable String memberId,
-                                                                           @RequestParam String orderNo,
+                                                                           @RequestParam @NotBlank @Size(max = 40) String orderNo,
                                                                            @RequestParam(required = false) TxType txType) {
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, txType);
         return ResponseEntity.ok(response);
