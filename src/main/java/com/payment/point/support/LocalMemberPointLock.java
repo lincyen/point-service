@@ -24,7 +24,7 @@ public class LocalMemberPointLock implements MemberPointLock {
                 .build();
     }
 
-    /**현
+    /**
      * 회원 단위 락을 획득한다.
      *
      * @param memberId 회원아이디
