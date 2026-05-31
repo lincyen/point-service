@@ -1,0 +1,1065 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Point Service API",
+    "description": "무료 포인트 적립, 적립취소, 사용, 사용취소, 만료 및 조회 API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Point",
+      "description": "Point transaction APIs"
+    }
+  ],
+  "paths": {
+    "/v1/members/{memberId}/points/earn": {
+      "post": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "포인트 적립",
+        "operationId": "earnPoint",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarnRequest"
+              },
+              "example": {
+                "orderNo": "EARN-001",
+                "orderDtm": "2026-05-28T10:00:00",
+                "earnType": "NORMAL",
+                "amount": 1000,
+                "expirePeriod": "P365D"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "포인트 적립 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EarnResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/members/{memberId}/points/earn-cancel": {
+      "post": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "포인트 적립취소",
+        "operationId": "cancelEarnPoint",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarnCancelRequest"
+              },
+              "example": {
+                "orderNo": "EARN-CANCEL-001",
+                "orderDtm": "2026-05-28T10:05:00",
+                "pointTransactionNo": "20260528100000001000000009",
+                "amount": 1000
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "포인트 적립취소 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EarnCancelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/members/{memberId}/points/use": {
+      "post": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "포인트 사용",
+        "operationId": "usePoint",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseRequest"
+              },
+              "example": {
+                "orderNo": "USE-001",
+                "orderDtm": "2026-05-28T10:10:00",
+                "amount": 400
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "포인트 사용 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/members/{memberId}/points/use-cancel": {
+      "post": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "포인트 사용취소",
+        "description": "사용한 금액 중 전체 또는 일부를 취소한다. 사용취소는 사용 당시 차감된 Allocation 우선순위 순서대로 복원하며, 원 적립건이 만료된 경우 해당 금액만큼 신규 RESTORE 적립을 생성한다. RESTORE 적립의 만료일은 사용취소 처리일에 기본 만료 기간을 더해 설정한다.",
+        "operationId": "cancelUsePoint",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseCancelRequest"
+              },
+              "example": {
+                "orderNo": "USE-CANCEL-001",
+                "orderDtm": "2026-05-28T10:15:00",
+                "pointTransactionNo": "20260528101000001000000011",
+                "amount": 150
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "포인트 사용취소 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UseCancelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/members/{memberId}/points/expire": {
+      "post": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "회원별 포인트 만료",
+        "description": "기준일까지 만료된 해당 회원의 적립 원장만 만료 처리한다. 만료일 당일 00시부터 사용할 수 없다. 포인트 금액이 변경되므로 memberId 기준 요청 락을 적용한다.",
+        "operationId": "expireMemberPoint",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpireRequest"
+              },
+              "example": {
+                "baseDate": "2026-05-30"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "회원별 포인트 만료 처리 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpireResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/members/{memberId}/points/balance": {
+      "get": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "포인트 잔액 조회",
+        "description": "EARN API로 PNT_MEMBER_BAL이 생성된 회원만 조회한다. 잔액 row가 없으면 INVALID_USER를 반환한다.",
+        "operationId": "getPointBalance",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "포인트 잔액 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/members/{memberId}/points/histories": {
+      "get": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "포인트 거래 이력 조회",
+        "description": "PNT_MEMBER_BAL이 존재하는 회원의 포인트 거래 이력을 최신순으로 조회한다. 잔액 row가 없으면 INVALID_USER를 반환하고, 유효 회원의 조회 결과가 없으면 NO_HISTORY_RESULT를 반환한다. 조회 기간은 최대 3개월이며, txType이 없으면 전체 거래 유형을 조회한다.",
+        "operationId": "getPointHistories",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "description": "조회 시작일. yyyy-MM-dd 형식이다.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-05-01"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "description": "조회 종료일. yyyy-MM-dd 형식이며 startDate보다 이후여야 한다.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-05-30"
+            }
+          },
+          {
+            "name": "txType",
+            "in": "query",
+            "required": false,
+            "description": "거래 유형 optional. 값이 없으면 전체 거래 유형을 조회한다.",
+            "schema": {
+              "$ref": "#/components/schemas/TxType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "포인트 거래 이력 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/members/{memberId}/points/transactions/by-order": {
+      "get": {
+        "tags": [
+          "Point"
+        ],
+        "summary": "주문번호 기반 포인트 거래 조회",
+        "description": "네트워크 유실 등으로 응답을 받지 못한 요청의 처리 여부를 회원아이디와 주문번호로 조회한다. 잔액 row가 없으면 INVALID_USER를 반환하고, 유효 회원의 주문번호에 해당하는 거래가 없으면 exists=false를 반환한다. txType은 선택 필터이며, 현재 주문번호는 동일 회원 내 모든 포인트 API에서 중복을 허용하지 않는다.",
+        "operationId": "getPointTransactionByOrder",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MemberId"
+          },
+          {
+            "name": "orderNo",
+            "in": "query",
+            "required": true,
+            "description": "클라이언트 주문번호. 필수값이며 공백 문자열을 허용하지 않고, 최대 40자까지 허용한다.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": ".*\\S.*"
+            }
+          },
+          {
+            "name": "txType",
+            "in": "query",
+            "required": false,
+            "description": "거래 유형 optional",
+            "schema": {
+              "$ref": "#/components/schemas/TxType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "주문번호 기반 포인트 거래 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionLookupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "MemberId": {
+        "name": "memberId",
+        "in": "path",
+        "required": true,
+        "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다.",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^[A-Za-z0-9]+$",
+          "example": "550e8400e29b41d4a716446655440000"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "요청 파라미터 또는 비즈니스 정책 오류",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": "INVALID_PARAMETER",
+              "message": "요청 파라미터가 올바르지 않습니다."
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "EarnRequest": {
+        "type": "object",
+        "required": [
+          "orderNo",
+          "earnType",
+          "amount"
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": ".*\\S.*",
+            "description": "클라이언트 주문번호. 필수값이며 공백 문자열은 허용하지 않는다."
+          },
+          "orderDtm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "클라이언트 주문/요청 시각"
+          },
+          "earnType": {
+            "$ref": "#/components/schemas/EarnRequestType"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "적립 금액. 1회 요청은 1포인트 이상 100,000포인트 이하이다."
+          },
+          "expirePeriod": {
+            "type": "string",
+            "nullable": true,
+            "default": "P365D",
+            "example": "P365D",
+            "description": "Java Period.parse()로 파싱 가능한 ISO-8601 period 형식의 만료 기간. 미입력 시 P365D를 사용하며, 허용 범위는 P1D 이상 P5Y 미만이다."
+          }
+        }
+      },
+      "EarnResponse": {
+        "type": "object",
+        "required": [
+          "pointTransactionNo",
+          "memberId",
+          "amount",
+          "remainingAmount"
+        ],
+        "properties": {
+          "pointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "생성된 포인트 적립 거래번호. DB 현재시각 17자리와 sequence 9자리로 구성된 26자리 숫자 문자열이다."
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "적립 금액"
+          },
+          "remainingAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "적립 후 회원 총 잔액"
+          }
+        },
+        "example": {
+          "pointTransactionNo": "20260528100000001000000009",
+          "memberId": "550e8400e29b41d4a716446655440000",
+          "amount": 1000,
+          "remainingAmount": 1000
+        }
+      },
+      "EarnCancelRequest": {
+        "type": "object",
+        "required": [
+          "orderNo",
+          "pointTransactionNo",
+          "amount"
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": ".*\\S.*",
+            "description": "클라이언트 주문번호. 필수값이며 공백 문자열은 허용하지 않는다."
+          },
+          "orderDtm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "클라이언트 주문/요청 시각"
+          },
+          "pointTransactionNo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 26,
+            "description": "취소할 원 적립 거래번호. DB 현재시각 17자리와 sequence 9자리로 구성된 26자리 숫자 문자열이다."
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "적립취소 금액"
+          }
+        }
+      },
+      "EarnCancelResponse": {
+        "type": "object",
+        "required": [
+          "pointTransactionNo",
+          "memberId",
+          "amount",
+          "remainingAmount"
+        ],
+        "properties": {
+          "pointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "생성된 포인트 적립취소 거래번호. DB 현재시각 17자리와 sequence 9자리로 구성된 26자리 숫자 문자열이다."
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "적립취소 금액"
+          },
+          "remainingAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "적립취소 후 회원 총 잔액"
+          }
+        },
+        "example": {
+          "pointTransactionNo": "20260528100500001000000010",
+          "memberId": "550e8400e29b41d4a716446655440000",
+          "amount": 1000,
+          "remainingAmount": 0
+        }
+      },
+      "UseRequest": {
+        "type": "object",
+        "required": [
+          "orderNo",
+          "amount"
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": ".*\\S.*",
+            "description": "클라이언트 주문번호. 필수값이며 공백 문자열은 허용하지 않는다."
+          },
+          "orderDtm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "클라이언트 주문/요청 시각"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "사용 금액"
+          }
+        }
+      },
+      "UseResponse": {
+        "type": "object",
+        "required": [
+          "pointTransactionNo",
+          "memberId",
+          "amount",
+          "remainingAmount"
+        ],
+        "properties": {
+          "pointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "생성된 포인트 사용 거래번호. DB 현재시각 17자리와 sequence 9자리로 구성된 26자리 숫자 문자열이다."
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용 금액"
+          },
+          "remainingAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용 후 회원 총 잔액"
+          }
+        },
+        "example": {
+          "pointTransactionNo": "20260528101000001000000011",
+          "memberId": "550e8400e29b41d4a716446655440000",
+          "amount": 400,
+          "remainingAmount": 600
+        }
+      },
+      "UseCancelRequest": {
+        "type": "object",
+        "required": [
+          "orderNo",
+          "pointTransactionNo",
+          "amount"
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": ".*\\S.*",
+            "description": "클라이언트 주문번호. 필수값이며 공백 문자열은 허용하지 않는다."
+          },
+          "orderDtm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "클라이언트 주문/요청 시각"
+          },
+          "pointTransactionNo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 26,
+            "description": "취소할 원 사용 거래번호. DB 현재시각 17자리와 sequence 9자리로 구성된 26자리 숫자 문자열이다."
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "사용취소 금액"
+          }
+        }
+      },
+      "UseCancelResponse": {
+        "type": "object",
+        "required": [
+          "pointTransactionNo",
+          "memberId",
+          "amount",
+          "remainingAmount"
+        ],
+        "properties": {
+          "pointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "생성된 포인트 사용취소 거래번호. DB 현재시각 17자리와 sequence 9자리로 구성된 26자리 숫자 문자열이다."
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용취소 금액"
+          },
+          "remainingAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용취소 후 회원 총 잔액"
+          }
+        },
+        "example": {
+          "pointTransactionNo": "20260528101500001000000012",
+          "memberId": "550e8400e29b41d4a716446655440000",
+          "amount": 150,
+          "remainingAmount": 750
+        }
+      },
+      "ExpireRequest": {
+        "type": "object",
+        "properties": {
+          "baseDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "만료 기준일. null이면 서버 현재일을 사용한다."
+          }
+        }
+      },
+      "ExpireResponse": {
+        "type": "object",
+        "required": [
+          "expiredCount",
+          "expiredAmount"
+        ],
+        "properties": {
+          "expiredCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "만료 처리된 적립 원장 수"
+          },
+          "expiredAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "만료 처리된 포인트 금액 합계"
+          }
+        },
+        "example": {
+          "expiredCount": 1,
+          "expiredAmount": 300
+        }
+      },
+      "BalanceResponse": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "normalAmount",
+          "manualAmount",
+          "expiredAmount",
+          "totalAmount"
+        ],
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+          },
+          "normalAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "일반 적립 포인트 잔액"
+          },
+          "manualAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "관리자 수기 지급 포인트 잔액"
+          },
+          "expiredAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "누적 만료 포인트 금액"
+          },
+          "totalAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용 가능한 총 포인트 잔액. normalAmount + manualAmount 값이다."
+          }
+        },
+        "example": {
+          "memberId": "550e8400e29b41d4a716446655440000",
+          "normalAmount": 300,
+          "manualAmount": 200,
+          "expiredAmount": 0,
+          "totalAmount": 500
+        }
+      },
+      "TransactionLookupResponse": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "orderNo",
+          "exists"
+        ],
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+          },
+          "orderNo": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "클라이언트 주문번호"
+          },
+          "txType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TxType"
+              }
+            ],
+            "nullable": true,
+            "description": "조회 요청 거래 유형 nullable"
+          },
+          "exists": {
+            "type": "boolean",
+            "description": "거래 존재 여부"
+          },
+          "transaction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionLookupItem"
+              }
+            ],
+            "nullable": true,
+            "description": "거래 이력. exists=false이면 null이다."
+          }
+        },
+        "example": {
+          "memberId": "550e8400e29b41d4a716446655440000",
+          "orderNo": "USE-001",
+          "txType": "USE",
+          "exists": true,
+          "transaction": {
+            "pointTransactionNo": "20260528101000001000000011",
+            "orignalPointTransactionNo": "20260528101000001000000011",
+            "orderDtm": "2026-05-28T10:10:00",
+            "txType": "USE",
+            "amount": 400,
+            "remainingAmount": 600,
+            "expireDate": null,
+            "createdAt": "2026-05-28T10:10:01"
+          }
+        }
+      },
+      "HistoryResponse": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "histories"
+        ],
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+          },
+          "histories": {
+            "type": "array",
+            "description": "거래 이력 목록. 최신순으로 정렬된다.",
+            "items": {
+              "$ref": "#/components/schemas/HistoryItem"
+            }
+          }
+        },
+        "example": {
+          "memberId": "550e8400e29b41d4a716446655440000",
+          "histories": [
+            {
+              "pointTransactionNo": "20260528101000001000000011",
+              "orignalPointTransactionNo": "20260528101000001000000011",
+              "orderNo": "USE-001",
+              "orderDtm": "2026-05-28T10:10:00",
+              "txType": "USE",
+              "amount": 400,
+              "remainingAmount": 600,
+              "expireDate": null,
+              "createdAt": "2026-05-28T10:10:01"
+            }
+          ]
+        }
+      },
+      "HistoryItem": {
+        "type": "object",
+        "required": [
+          "pointTransactionNo",
+          "orignalPointTransactionNo",
+          "txType",
+          "amount",
+          "remainingAmount",
+          "createdAt"
+        ],
+        "properties": {
+          "pointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "포인트 거래번호"
+          },
+          "orignalPointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "원 포인트 거래번호"
+          },
+          "orderNo": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true,
+            "description": "클라이언트 주문번호"
+          },
+          "orderDtm": {
+            "type": "string",
+            "format": "date-time",
+            "description": "클라이언트 주문/요청 시각"
+          },
+          "txType": {
+            "$ref": "#/components/schemas/TxType"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "거래 금액"
+          },
+          "remainingAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "거래 후 회원 총 잔액"
+          },
+          "expireDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "거래 당시 만료일 스냅샷"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "서버 생성 시각"
+          }
+        }
+      },
+      "TransactionLookupItem": {
+        "type": "object",
+        "required": [
+          "pointTransactionNo",
+          "orignalPointTransactionNo",
+          "orderDtm",
+          "txType",
+          "amount",
+          "remainingAmount",
+          "createdAt"
+        ],
+        "properties": {
+          "pointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "포인트 거래번호"
+          },
+          "orignalPointTransactionNo": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "원 포인트 거래번호"
+          },
+          "orderDtm": {
+            "type": "string",
+            "format": "date-time",
+            "description": "클라이언트 주문/요청 시각"
+          },
+          "txType": {
+            "$ref": "#/components/schemas/TxType"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "거래 금액"
+          },
+          "remainingAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "거래 후 회원 총 잔액"
+          },
+          "expireDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "거래 당시 만료일 스냅샷"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "서버 생성 시각"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string",
+            "description": "오류 메시지"
+          }
+        }
+      },
+      "EarnRequestType": {
+        "type": "string",
+        "description": "외부 요청에서 허용하는 포인트 적립 유형. RESTORE는 만료된 원 적립건의 사용취소 시 내부적으로만 생성한다.",
+        "enum": [
+          "NORMAL",
+          "MANUAL"
+        ]
+      },
+      "TxType": {
+        "type": "string",
+        "description": "포인트 거래 유형",
+        "enum": [
+          "EARN",
+          "EARN_CNCL",
+          "USE",
+          "USE_CNCL",
+          "EXPIRE"
+        ]
+      },
+      "ErrorCode": {
+        "type": "string",
+        "description": "API 오류 코드",
+        "enum": [
+          "INVALID_PARAMETER",
+          "INVALID_USER",
+          "NOT_ENOUGH_POINT",
+          "INCORRECT_POINT",
+          "ALREADY_CANCELED",
+          "NO_POINT_HISTORY",
+          "PARTIAL_CANCEL_FAIL",
+          "EXPIRED_POINT",
+          "TIMEOUT",
+          "SYSTEM_ERROR",
+          "DUPLICATED_ORDER",
+          "NO_REMAIN_POINT",
+          "CANCEL_AMOUNT_EXCEEDED",
+          "INVALID_HISTORY_PERIOD",
+          "HISTORY_PERIOD_EXCEEDED",
+          "NO_HISTORY_RESULT",
+          "POINT_PROCESSING"
+        ]
+      }
+    }
+  }
+}
