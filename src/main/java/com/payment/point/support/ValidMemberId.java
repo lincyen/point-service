@@ -13,17 +13,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 회원아이디 형식 검증 어노테이션.
+ * 회원아이디 검증 어노테이션.
  *
  * <pre>
- *     회원아이디는 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열만 허용한다.
+ *     회원아이디는 공백 문자를 포함하지 않는 1자 이상 32자 이하 문자열만 허용한다.
  * </pre>
  */
 @Documented
 @Constraint(validatedBy = {})
 @NotBlank
 @Size(max = 32)
-@Pattern(regexp = "^[A-Za-z0-9]+$")
+@Pattern(regexp = "^\\S+$")
 @ReportAsSingleViolation
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)

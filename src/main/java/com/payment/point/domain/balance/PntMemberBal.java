@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PntMemberBal {
 
-    /** 회원아이디 (영문자와 숫자로 구성된 최대 32자리 문자열) */
+    /** 회원아이디 (공백 문자를 포함하지 않는 최대 32자리 문자열) */
     @Id
     @Column(name = "MEMBER_ID", length = 32, nullable = false)
     private String memberId;

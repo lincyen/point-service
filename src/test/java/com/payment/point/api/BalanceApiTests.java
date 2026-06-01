@@ -49,17 +49,17 @@ class BalanceApiTests extends PointApiTestSupport {
     }
 
     @Test
-    @DisplayName("성공-영문자와 숫자로 구성된 회원아이디 요청 허용")
-    void getBalanceApiAcceptsAlphanumericMemberId() throws Exception {
-        mockMvc.perform(get("/v1/members/{memberId}/points/balance", "Member123"))
+    @DisplayName("성공-특수문자가 포함된 회원아이디 요청 허용")
+    void getBalanceApiAcceptsMemberIdContainingSpecialCharacter() throws Exception {
+        mockMvc.perform(get("/v1/members/{memberId}/points/balance", "member-123"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_USER.name()));
     }
 
     @Test
-    @DisplayName("실패-특수문자가 포함된 회원아이디 요청, INVALID_PARAMETER")
-    void getBalanceApiRejectsMemberIdContainingSpecialCharacter() throws Exception {
-        mockMvc.perform(get("/v1/members/{memberId}/points/balance", "member-123"))
+    @DisplayName("실패-공백이 포함된 회원아이디 요청, INVALID_PARAMETER")
+    void getBalanceApiRejectsMemberIdContainingWhitespace() throws Exception {
+        mockMvc.perform(get("/v1/members/{memberId}/points/balance", "member 123"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.name()));
     }
