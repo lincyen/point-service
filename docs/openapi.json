@@ -339,7 +339,7 @@
           "Point"
         ],
         "summary": "주문번호 기반 포인트 거래 조회",
-        "description": "네트워크 유실 등으로 응답을 받지 못한 요청의 처리 여부를 회원아이디와 주문번호로 조회한다. 잔액 row가 없으면 INVALID_USER를 반환하고, 유효 회원의 주문번호에 해당하는 거래가 없으면 exists=false를 반환한다. txType은 선택 필터이며, 현재 주문번호는 동일 회원 내 모든 포인트 API에서 중복을 허용하지 않는다.",
+        "description": "네트워크 유실 등으로 응답을 받지 못한 요청의 처리 여부를 회원아이디, 주문번호, 거래 유형으로 조회한다. 잔액 row가 없으면 INVALID_USER를 반환하고, 유효 회원의 주문번호와 거래 유형에 해당하는 거래가 없으면 exists=false를 반환한다. 동일 회원의 동일 주문번호와 동일 거래 유형 조합은 중복을 허용하지 않는다.",
         "operationId": "getPointTransactionByOrder",
         "parameters": [
           {
@@ -360,8 +360,8 @@
           {
             "name": "txType",
             "in": "query",
-            "required": false,
-            "description": "거래 유형 optional",
+            "required": true,
+            "description": "거래 유형. 필수값이다.",
             "schema": {
               "$ref": "#/components/schemas/TxType"
             }
@@ -391,12 +391,12 @@
         "name": "memberId",
         "in": "path",
         "required": true,
-        "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다.",
+        "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다.",
         "schema": {
           "type": "string",
           "minLength": 1,
           "maxLength": 32,
-          "pattern": "^[A-Za-z0-9]+$",
+          "pattern": "^\\S+$",
           "example": "550e8400e29b41d4a716446655440000"
         }
       }
@@ -476,8 +476,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9]+$",
-            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+            "pattern": "^\\S+$",
+            "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다."
           },
           "amount": {
             "type": "integer",
@@ -550,8 +550,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9]+$",
-            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+            "pattern": "^\\S+$",
+            "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다."
           },
           "amount": {
             "type": "integer",
@@ -617,8 +617,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9]+$",
-            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+            "pattern": "^\\S+$",
+            "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다."
           },
           "amount": {
             "type": "integer",
@@ -691,8 +691,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9]+$",
-            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+            "pattern": "^\\S+$",
+            "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다."
           },
           "amount": {
             "type": "integer",
@@ -760,8 +760,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9]+$",
-            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+            "pattern": "^\\S+$",
+            "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다."
           },
           "normalAmount": {
             "type": "integer",
@@ -797,6 +797,7 @@
         "required": [
           "memberId",
           "orderNo",
+          "txType",
           "exists"
         ],
         "properties": {
@@ -804,8 +805,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9]+$",
-            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+            "pattern": "^\\S+$",
+            "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다."
           },
           "orderNo": {
             "type": "string",
@@ -818,8 +819,7 @@
                 "$ref": "#/components/schemas/TxType"
               }
             ],
-            "nullable": true,
-            "description": "조회 요청 거래 유형 nullable"
+            "description": "조회 요청 거래 유형"
           },
           "exists": {
             "type": "boolean",
@@ -842,7 +842,7 @@
           "exists": true,
           "transaction": {
             "pointTransactionNo": "20260528101000001000000011",
-            "orignalPointTransactionNo": "20260528101000001000000011",
+            "originalPointTransactionNo": "20260528101000001000000011",
             "orderDtm": "2026-05-28T10:10:00",
             "txType": "USE",
             "amount": 400,
@@ -863,8 +863,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9]+$",
-            "description": "회원아이디. 영문자와 숫자로 구성된 1자 이상 32자 이하 문자열이다."
+            "pattern": "^\\S+$",
+            "description": "회원아이디. 외부 시스템에서 전달된 식별자로 포맷을 제한하지 않는다. 단, 공백 문자를 포함할 수 없으며 최대 32자까지 허용한다."
           },
           "histories": {
             "type": "array",
@@ -879,7 +879,7 @@
           "histories": [
             {
               "pointTransactionNo": "20260528101000001000000011",
-              "orignalPointTransactionNo": "20260528101000001000000011",
+              "originalPointTransactionNo": "20260528101000001000000011",
               "orderNo": "USE-001",
               "orderDtm": "2026-05-28T10:10:00",
               "txType": "USE",
@@ -895,7 +895,7 @@
         "type": "object",
         "required": [
           "pointTransactionNo",
-          "orignalPointTransactionNo",
+          "originalPointTransactionNo",
           "txType",
           "amount",
           "remainingAmount",
@@ -907,7 +907,7 @@
             "maxLength": 26,
             "description": "포인트 거래번호"
           },
-          "orignalPointTransactionNo": {
+          "originalPointTransactionNo": {
             "type": "string",
             "maxLength": 26,
             "description": "원 포인트 거래번호"
@@ -953,7 +953,7 @@
         "type": "object",
         "required": [
           "pointTransactionNo",
-          "orignalPointTransactionNo",
+          "originalPointTransactionNo",
           "orderDtm",
           "txType",
           "amount",
@@ -966,7 +966,7 @@
             "maxLength": 26,
             "description": "포인트 거래번호"
           },
-          "orignalPointTransactionNo": {
+          "originalPointTransactionNo": {
             "type": "string",
             "maxLength": 26,
             "description": "원 포인트 거래번호"

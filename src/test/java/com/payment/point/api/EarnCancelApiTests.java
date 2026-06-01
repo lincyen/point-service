@@ -45,4 +45,25 @@ class EarnCancelApiTests extends PointApiTestSupport {
 
         assertEquals(ErrorCode.INCORRECT_POINT, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("실패-동일 주문번호 적립취소 재호출, DUPLICATED_ORDER")
+    void earnCancelRejectsDuplicatedOrderNoWithoutAdditionalBalanceChange() {
+        String memberId = memberId();
+        EarnResponse earnResponse = givenEarn(memberId, "EARN-CANCEL-DUPLICATE-EARN", EarnType.NORMAL, 500, "P10D");
+        EarnCancelRequest request = new EarnCancelRequest(
+                orderNo("EARN-CANCEL-DUPLICATE"),
+                null,
+                earnResponse.pointTransactionNo(),
+                500
+        );
+
+        pointFacadeService.earnCancel(memberId, request);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> pointFacadeService.earnCancel(memberId, request));
+
+        assertEquals(ErrorCode.DUPLICATED_ORDER, exception.getErrorCode());
+        assertEquals(0, pointFacadeService.getBalance(memberId).totalAmount());
+    }
 }
