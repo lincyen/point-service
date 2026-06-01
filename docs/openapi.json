@@ -205,7 +205,7 @@
           "Point"
         ],
         "summary": "회원별 포인트 만료",
-        "description": "기준일까지 만료된 해당 회원의 적립 원장만 만료 처리한다. 만료일 당일 00시부터 사용할 수 없다. 포인트 금액이 변경되므로 memberId 기준 요청 락을 적용한다.",
+        "description": "기준일까지 만료된 해당 회원의 적립 원장만 만료 처리한다. 만료일 당일 00시부터 사용할 수 없다. 기준일은 서버 현재일 이하만 허용하며, 미래 날짜 요청은 INVALID_PARAMETER를 반환한다. 포인트 금액이 변경되므로 memberId 기준 요청 락을 적용한다.",
         "operationId": "expireMemberPoint",
         "parameters": [
           {
@@ -719,7 +719,7 @@
             "type": "string",
             "format": "date",
             "nullable": true,
-            "description": "만료 기준일. null이면 서버 현재일을 사용한다."
+            "description": "만료 기준일. null이면 서버 현재일을 사용한다. 서버 현재일 이하만 허용한다."
           }
         }
       },

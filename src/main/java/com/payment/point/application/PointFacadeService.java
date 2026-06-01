@@ -369,7 +369,11 @@ public class PointFacadeService {
     @MemberPointLocked
     @Transactional
     public ExpireResponse expire(String memberId, ExpireRequest request) {
-        LocalDate baseDate = request.baseDate() == null ? LocalDate.now() : request.baseDate();
+        LocalDate today = LocalDate.now();
+        LocalDate baseDate = request.baseDate() == null ? today : request.baseDate();
+        if (baseDate.isAfter(today)) {
+            throw new ApiException(ErrorCode.INVALID_PARAMETER);
+        }
         PntMemberBal balance = pointBalanceService.findBalance(memberId);
         return pointExpireService.expireMember(memberId, balance, baseDate);
     }
