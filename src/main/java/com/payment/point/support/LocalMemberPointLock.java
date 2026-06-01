@@ -3,6 +3,7 @@ package com.payment.point.support;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.payment.point.config.PointPolicyProperties;
+import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LocalMemberPointLock implements MemberPointLock {
 
-    private final Cache<String, Boolean> processingMemberIds;
+    private final Cache<String, UUID> processingMemberIds;
 
     public LocalMemberPointLock(PointPolicyProperties pointPolicyProperties) {
         this.processingMemberIds = Caffeine.newBuilder()
@@ -32,10 +33,11 @@ public class LocalMemberPointLock implements MemberPointLock {
      */
     @Override
     public LockHandle acquire(String memberId) {
-        Boolean previous = processingMemberIds.asMap().putIfAbsent(memberId, Boolean.TRUE);
+        UUID token = UUID.randomUUID();
+        UUID previous = processingMemberIds.asMap().putIfAbsent(memberId, token);
         if (previous != null) {
             throw new ApiException(ErrorCode.POINT_PROCESSING);
         }
-        return () -> processingMemberIds.invalidate(memberId);
+        return () -> processingMemberIds.asMap().remove(memberId, token);
     }
 }

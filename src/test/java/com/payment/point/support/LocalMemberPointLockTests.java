@@ -33,11 +33,31 @@ class LocalMemberPointLockTests {
         assertDoesNotThrow(() -> lock.acquire("Member123").close());
     }
 
+    @Test
+    @DisplayName("성공-TTL 만료 후 이전 요청의 해제가 신규 요청 락을 제거하지 않음")
+    void expiredLockHandleDoesNotReleaseNewMemberLock() throws InterruptedException {
+        LocalMemberPointLock lock = new LocalMemberPointLock(properties(Duration.ofMillis(10)));
+        MemberPointLock.LockHandle expiredHandle = lock.acquire("Member123");
+
+        Thread.sleep(50);
+
+        try (MemberPointLock.LockHandle ignored = lock.acquire("Member123")) {
+            expiredHandle.close();
+
+            ApiException exception = assertThrows(ApiException.class, () -> lock.acquire("Member123"));
+            assertEquals(ErrorCode.POINT_PROCESSING, exception.getErrorCode());
+        }
+    }
+
     private PointPolicyProperties properties() {
+        return properties(Duration.ofSeconds(10));
+    }
+
+    private PointPolicyProperties properties(Duration ttl) {
         return new PointPolicyProperties(
                 new PointPolicyProperties.Earn(1, 100_000, "P365D", "P1D", "P5Y"),
                 new PointPolicyProperties.Member(1_000_000),
-                new PointPolicyProperties.Lock(Duration.ofSeconds(10))
+                new PointPolicyProperties.Lock(ttl)
         );
     }
 }
