@@ -5,78 +5,78 @@
 
 ```mermaid
 erDiagram
-    MEMBER_BALANCE {
-        string memberId PK "회원아이디"
-        long normalAmount "일반 포인트 잔액"
-        long manualAmount "수기 지급 포인트 잔액"
-        long expiredAmount "누적 만료 금액"
-        date nextExpireDate "다음 만료 예정일"
+    PNT_MEMBER_BAL {
+        varchar MEMBER_ID PK "회원아이디"
+        bigint NORMAL_AMT "일반 포인트 잔액"
+        bigint MANUAL_AMT "수기 지급 포인트 잔액"
+        bigint EXPIRED_AMT "누적 만료 금액"
+        date NEXT_EXP_DT "다음 만료 예정일"
     }
 
-    POINT_TRANSACTION_HISTORY {
-        string pointTransactionNo PK "포인트 거래번호"
-        string originalPointTransactionNo "원 거래번호"
-        string memberId "회원아이디"
-        string orderNo "주문번호"
-        string transactionType "거래 유형"
-        long transactionAmount "거래 금액"
-        long remainingAmount "거래 후 회원 잔액"
+    PNT_TR_HIST {
+        varchar PTXNO PK "포인트 거래번호"
+        varchar OPTXNO "원 거래번호"
+        varchar MEMBER_ID "회원아이디"
+        varchar ORDER_NO "주문번호"
+        varchar TX_TYPE "거래 유형"
+        bigint TX_AMT "거래 금액"
+        bigint RMN_AMT "거래 후 회원 잔액"
     }
 
-    EARN_LEDGER {
-        string pointTransactionNo PK "적립 거래번호"
-        string memberId "회원아이디"
-        string earnType "NORMAL, MANUAL, RESTORE"
-        long earnAmount "최초 적립 금액"
-        long remainingAmount "사용 가능 잔액"
-        long useAmount "누적 사용 금액"
-        long earnCancelAmount "적립취소 금액"
-        long expiredAmount "만료 금액"
-        date expireDate "현재 유효 만료일"
-        string status "ACTIVE, USED_UP, CNCL, EXPIRED"
+    PNT_EARN_MST {
+        varchar PTXNO PK "적립 거래번호"
+        varchar MEMBER_ID "회원아이디"
+        varchar EARN_TYPE "NORMAL, MANUAL, RESTORE"
+        bigint EARN_AMT "최초 적립 금액"
+        bigint RMN_AMT "사용 가능 잔액"
+        bigint USE_AMT "누적 사용 금액"
+        bigint EARN_CNCL_AMT "적립취소 금액"
+        bigint EXPIRED_AMT "만료 금액"
+        date EXP_DT "현재 유효 만료일"
+        varchar STATUS "ACTIVE, USED_UP, CNCL, EXPIRED"
     }
 
-    USE_LEDGER {
-        string pointTransactionNo PK "사용 거래번호"
-        string memberId "회원아이디"
-        string orderNo "주문번호"
-        long useAmount "최초 사용 금액"
-        long cancelAmount "누적 사용취소 금액"
-        long remainingAmount "취소 가능 잔액"
-        string status "ACTIVE, PARTIAL_CNCL, CNCL"
+    PNT_USE_MST {
+        varchar PTXNO PK "사용 거래번호"
+        varchar MEMBER_ID "회원아이디"
+        varchar ORDER_NO "주문번호"
+        bigint USE_AMT "최초 사용 금액"
+        bigint CNCL_AMT "누적 사용취소 금액"
+        bigint RMN_AMT "취소 가능 잔액"
+        varchar STATUS "ACTIVE, PARTIAL_CNCL, CNCL"
     }
 
-    USE_ALLOCATION {
-        string useAllocationId PK "사용 상세번호"
-        string usePointTransactionNo "사용 거래번호"
-        string earnPointTransactionNo "적립 거래번호"
-        int priority "사용 차감 순서"
-        long consumeAmount "차감 금액"
-        long cancelAmount "취소 금액"
-        long remainingAmount "취소 가능 잔액"
+    PNT_USE_ALLOC {
+        varchar USE_ALLOC_ID PK "사용 상세번호"
+        varchar PTXNO "사용 거래번호"
+        varchar EARN_PTXNO "적립 거래번호"
+        int PRIORITY "사용 차감 순서"
+        bigint CNSM_AMT "차감 금액"
+        bigint CNCL_AMT "취소 금액"
+        bigint RMN_AMT "취소 가능 잔액"
     }
 
-    USE_CANCEL_HISTORY {
-        string useCancelHistoryId PK "사용취소 상세번호"
-        string useCancelPointTransactionNo "사용취소 거래번호"
-        string usePointTransactionNo "원 사용 거래번호"
-        string useAllocationId "원 사용 상세번호"
-        string originalEarnPointTransactionNo "원 적립 거래번호"
-        string restorePointTransactionNo "신규 RESTORE 적립 거래번호"
-        string restoreType "ORIGINAL_RESTORE, NEW_EARN"
-        long cancelAmount "취소 금액"
+    PNT_USE_CANCEL_HIST {
+        varchar USE_CNCL_HIST_ID PK "사용취소 상세번호"
+        varchar USE_CNCL_PTXNO "사용취소 거래번호"
+        varchar USE_PTXNO "원 사용 거래번호"
+        varchar USE_ALLOC_ID "원 사용 상세번호"
+        varchar ORG_EARN_PTXNO "원 적립 거래번호"
+        varchar RESTORE_PTXNO "신규 RESTORE 적립 거래번호"
+        varchar RESTORE_TYPE "ORIGINAL_RESTORE, NEW_EARN"
+        bigint CNCL_AMT "취소 금액"
     }
 
-    MEMBER_BALANCE ||--o{ EARN_LEDGER : "보유한다"
-    MEMBER_BALANCE ||--o{ USE_LEDGER : "사용한다"
-    MEMBER_BALANCE ||--o{ POINT_TRANSACTION_HISTORY : "거래 이력을 가진다"
+    PNT_MEMBER_BAL ||--o{ PNT_EARN_MST : "보유한다"
+    PNT_MEMBER_BAL ||--o{ PNT_USE_MST : "사용한다"
+    PNT_MEMBER_BAL ||--o{ PNT_TR_HIST : "거래 이력을 가진다"
 
-    EARN_LEDGER ||--o{ USE_ALLOCATION : "사용 금액이 차감된다"
-    USE_LEDGER ||--|{ USE_ALLOCATION : "적립 건별로 배분한다"
+    PNT_EARN_MST ||--o{ PNT_USE_ALLOC : "사용 금액이 차감된다"
+    PNT_USE_MST ||--|{ PNT_USE_ALLOC : "적립 건별로 배분한다"
 
-    USE_LEDGER ||--o{ USE_CANCEL_HISTORY : "전체 또는 부분 취소된다"
-    USE_ALLOCATION ||--o{ USE_CANCEL_HISTORY : "배분 금액이 복원된다"
-    EARN_LEDGER o|--o{ USE_CANCEL_HISTORY : "만료 시 RESTORE 적립을 생성한다"
+    PNT_USE_MST ||--o{ PNT_USE_CANCEL_HIST : "전체 또는 부분 취소된다"
+    PNT_USE_ALLOC ||--o{ PNT_USE_CANCEL_HIST : "배분 금액이 복원된다"
+    PNT_EARN_MST o|--o{ PNT_USE_CANCEL_HIST : "만료 시 RESTORE 적립을 생성한다"
 ```
 
 ## 관계 설명
@@ -92,6 +92,6 @@ erDiagram
 
 ## 참고
 
-- `MEMBER_BALANCE`와 각 원장 사이의 관계는 `memberId` 기반 논리 관계입니다.
+- `PNT_MEMBER_BAL`과 각 원장 사이의 관계는 `MEMBER_ID` 기반 논리 관계입니다.
 - 물리 스키마에서는 원장 간 필수 참조 관계에만 FK를 적용합니다.
 - 거래 이력은 원장과 FK로 연결하지 않고 거래번호와 원 거래번호로 추적합니다.
