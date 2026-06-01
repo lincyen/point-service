@@ -66,4 +66,38 @@ class EarnCancelApiTests extends PointApiTestSupport {
         assertEquals(ErrorCode.DUPLICATED_ORDER, exception.getErrorCode());
         assertEquals(0, pointFacadeService.getBalance(memberId).totalAmount());
     }
+
+    @Test
+    @DisplayName("실패-서로 다른 주문번호로 이미 취소된 적립 원장 재취소, ALREADY_CANCELED")
+    void earnCancelRejectsAlreadyCanceledEarnWithDifferentOrderNo() {
+        String memberId = memberId();
+        EarnResponse earnResponse = givenEarn(memberId, "EARN-CANCEL-ALREADY-EARN", EarnType.NORMAL, 500, "P10D");
+        pointFacadeService.earnCancel(
+                memberId,
+                new EarnCancelRequest(orderNo("EARN-CANCEL-ALREADY-1"), null, earnResponse.pointTransactionNo(), 500)
+        );
+
+        ApiException exception = assertThrows(ApiException.class, () -> pointFacadeService.earnCancel(
+                memberId,
+                new EarnCancelRequest(orderNo("EARN-CANCEL-ALREADY-2"), null, earnResponse.pointTransactionNo(), 500)
+        ));
+
+        assertEquals(ErrorCode.ALREADY_CANCELED, exception.getErrorCode());
+        assertEquals(0, pointFacadeService.getBalance(memberId).totalAmount());
+    }
+
+    @Test
+    @DisplayName("실패-적립 원장 부분취소 요청, PARTIAL_CANCEL_FAIL")
+    void earnCancelRejectsPartialCancel() {
+        String memberId = memberId();
+        EarnResponse earnResponse = givenEarn(memberId, "EARN-CANCEL-PARTIAL-EARN", EarnType.NORMAL, 500, "P10D");
+
+        ApiException exception = assertThrows(ApiException.class, () -> pointFacadeService.earnCancel(
+                memberId,
+                new EarnCancelRequest(orderNo("EARN-CANCEL-PARTIAL"), null, earnResponse.pointTransactionNo(), 499)
+        ));
+
+        assertEquals(ErrorCode.PARTIAL_CANCEL_FAIL, exception.getErrorCode());
+        assertEquals(500, pointFacadeService.getBalance(memberId).totalAmount());
+    }
 }

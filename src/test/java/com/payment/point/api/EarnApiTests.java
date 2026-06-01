@@ -54,6 +54,17 @@ class EarnApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-1회 최대 적립 가능 포인트 초과, INVALID_PARAMETER")
+    void earnRejectsAmountGreaterThanMaximumPolicy() {
+        String memberId = memberId();
+        EarnRequest request = new EarnRequest(orderNo("EARN-AMOUNT-EXCEEDED"), null, EarnType.NORMAL, 100_001, "P10D");
+
+        ApiException exception = assertThrows(ApiException.class, () -> pointFacadeService.earn(memberId, request));
+
+        assertEquals(ErrorCode.INVALID_PARAMETER, exception.getErrorCode());
+    }
+
+    @Test
     @DisplayName("실패-최대 만료기간 P5Y 요청, INVALID_PARAMETER")
     void earnRejectsFiveYearExpirePeriod() {
         String memberId = memberId();

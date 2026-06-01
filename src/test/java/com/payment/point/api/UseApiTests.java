@@ -104,6 +104,27 @@ class UseApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-만료일 당일 포인트 사용 요청, NOT_ENOUGH_POINT")
+    void useRejectsEarnOnExpireDate() {
+        String memberId = memberId();
+        EarnResponse earnResponse = givenEarn(memberId, "USE-EXPIRE-TODAY-EARN", EarnType.NORMAL, 100, "P10D");
+        LocalDate today = LocalDate.now();
+        jdbcTemplate.update("update POINT.PNT_EARN_MST set EXP_DT = ? where PTXNO = ?", today,
+                earnResponse.pointTransactionNo());
+        jdbcTemplate.update("update POINT.PNT_MEMBER_BAL set NEXT_EXP_DT = ? where MEMBER_ID = ?", today, memberId);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> givenUse(memberId, "USE-EXPIRE-TODAY", 1));
+
+        PntEarnMst earn = pntEarnMstRepository.findById(earnResponse.pointTransactionNo()).orElseThrow();
+        PntMemberBal balance = pntMemberBalRepository.findById(memberId).orElseThrow();
+        assertEquals(ErrorCode.NOT_ENOUGH_POINT, exception.getErrorCode());
+        assertEquals(EarnStatus.ACTIVE, earn.getStatus());
+        assertEquals(0, balance.getExpiredAmount());
+        assertEquals(100, balance.getTotalAmount());
+    }
+
+    @Test
     @DisplayName("성공-MANUAL 적립 원장을 일반 적립 원장보다 우선 차감")
     void useConsumesManualEarnBeforeNormalEarn() {
         String memberId = memberId();
