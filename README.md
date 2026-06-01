@@ -53,8 +53,9 @@ Password:
 - OpenAPI 문서: `docs/openapi.json`
 - DB 스키마: `src/main/resources/schema.sql`
 - ERD 이미지: `src/main/resources/erd.pdf`
+- 논리 ERD: [`src/main/resources/logical_erd.md`](src/main/resources/logical_erd.md)
 - AWS 운영 아키텍처 이미지: `src/main/resources/aws_architecture.pdf`
-
+ 
 테이블 정의, 코멘트, 인덱스, 유니크 제약은 `schema.sql`에서 관리합니다.
 
 ## 패키지 구조
