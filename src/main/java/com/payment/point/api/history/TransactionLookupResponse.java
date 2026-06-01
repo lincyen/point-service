@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  *
  * @param memberId 회원아이디
  * @param orderNo 클라이언트 주문번호
- * @param txType 조회 요청 거래 유형 nullable
+ * @param txType 조회 요청 거래 유형
  * @param exists 거래 존재 여부
  * @param transaction 거래 이력 nullable
  */
@@ -25,7 +25,7 @@ public record TransactionLookupResponse(
      * 포인트 거래 이력
      *
      * @param pointTransactionNo 포인트 거래번호
-     * @param orignalPointTransactionNo 원 포인트 거래번호
+     * @param originalPointTransactionNo 원 포인트 거래번호
      * @param orderDtm 클라이언트 주문/요청 시각
      * @param txType 거래 유형
      * @param amount 거래 금액
@@ -35,7 +35,7 @@ public record TransactionLookupResponse(
      */
     public record Item(
             String pointTransactionNo,
-            String orignalPointTransactionNo,
+            String originalPointTransactionNo,
             LocalDateTime orderDtm,
             TxType txType,
             long amount,

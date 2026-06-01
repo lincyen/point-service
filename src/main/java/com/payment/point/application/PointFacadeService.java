@@ -79,7 +79,7 @@ public class PointFacadeService {
         pointEarnService.validateRequestEarnType(request.earnType());
         pointEarnService.validateAmountPolicy(request.amount());
         pointEarnService.validatePositive(request.amount());
-        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
+        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo(), TxType.EARN);
 
         LocalDateTime now = LocalDateTime.now();
         LocalDate expireDate = pointEarnService.resolveExpireDate(request.expirePeriod(), now.toLocalDate());
@@ -116,7 +116,7 @@ public class PointFacadeService {
     @Transactional
     public EarnCancelResponse earnCancel(String memberId, EarnCancelRequest request) {
         pointEarnService.validatePositive(request.amount());
-        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
+        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo(), TxType.EARN_CNCL);
 
         LocalDate now = LocalDate.now();
         PntMemberBal balance = pointBalanceService.findBalance(memberId);
@@ -161,7 +161,7 @@ public class PointFacadeService {
     @Transactional
     public UseResponse use(String memberId, UseRequest request) {
         pointEarnService.validatePositive(request.amount());
-        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
+        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo(), TxType.USE);
 
         LocalDate now = LocalDate.now();
 
@@ -236,7 +236,7 @@ public class PointFacadeService {
     @Transactional
     public UseCancelResponse useCancel(String memberId, UseCancelRequest request) {
         pointEarnService.validatePositive(request.amount());
-        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo());
+        pointTransactionService.validateDuplicateOrder(memberId, request.orderNo(), TxType.USE_CNCL);
 
         LocalDate now = LocalDate.now();
         PntMemberBal balance = pointBalanceService.findBalance(memberId);
@@ -409,9 +409,8 @@ public class PointFacadeService {
      * <b>주문번호 기반 포인트 거래 조회</b>
      * <pre>
      *     1. 회원 잔액 row 존재 여부 valid
-     *     2. 회원아이디와 주문번호로 거래 이력 조회
-     *     3. 거래 유형이 입력되면 해당 유형만 조회
-     *     4. 거래가 없으면 exists=false 응답
+     *     2. 회원아이디, 주문번호, 거래 유형으로 거래 이력 조회
+     *     3. 거래가 없으면 exists=false 응답
      * </pre>
      *
      * @param memberId 회원아이디

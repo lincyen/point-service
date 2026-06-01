@@ -134,13 +134,13 @@ public class PointController {
      * <b>주문번호 기반 포인트 거래 조회</b>
      * @param memberId 회원아이디
      * @param orderNo 클라이언트 주문번호
-     * @param txType {@link TxType 포인트 거래 유형(optional)}
+     * @param txType {@link TxType 포인트 거래 유형}
      * @return 주문번호 기반 거래조회응답
      */
     @GetMapping("/members/{memberId}/points/transactions/by-order")
     public ResponseEntity<TransactionLookupResponse> getTransactionByOrder(@PathVariable @ValidMemberId String memberId,
                                                                            @RequestParam @NotBlank @Size(max = 40) String orderNo,
-                                                                           @RequestParam(required = false) TxType txType) {
+                                                                           @RequestParam @NotNull TxType txType) {
         TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, txType);
         return ResponseEntity.ok(response);
     }

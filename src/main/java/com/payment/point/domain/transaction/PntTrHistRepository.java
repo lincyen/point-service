@@ -2,6 +2,7 @@ package com.payment.point.domain.transaction;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,7 +24,7 @@ public interface PntTrHistRepository extends JpaRepository<PntTrHist, String> {
             @Param("txType") TxType txType
     );
 
-    List<PntTrHist> findByMemberIdAndOrderNo(String memberId, String orderNo);
+    Optional<PntTrHist> findByMemberIdAndOrderNoAndTxType(String memberId, String orderNo, TxType txType);
 
-    boolean existsByMemberIdAndOrderNo(String memberId, String orderNo);
+    boolean existsByMemberIdAndOrderNoAndTxType(String memberId, String orderNo, TxType txType);
 }

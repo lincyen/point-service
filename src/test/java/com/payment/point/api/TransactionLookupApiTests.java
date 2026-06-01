@@ -36,17 +36,36 @@ class TransactionLookupApiTests extends PointApiTestSupport {
         String orderNo = orderNo("LOOKUP-EARN");
         EarnResponse earnResponse = givenEarnByOrderNo(memberId, orderNo, EarnType.NORMAL, 1_000, "P10D");
 
-        TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, null);
+        TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, TxType.EARN);
 
         assertTrue(response.exists());
         assertEquals(memberId, response.memberId());
         assertEquals(orderNo, response.orderNo());
-        assertNull(response.txType());
+        assertEquals(TxType.EARN, response.txType());
         assertNotNull(response.transaction());
         assertEquals(earnResponse.pointTransactionNo(), response.transaction().pointTransactionNo());
         assertEquals(TxType.EARN, response.transaction().txType());
         assertEquals(1_000, response.transaction().amount());
         assertEquals(1_000, response.transaction().remainingAmount());
+    }
+
+    @Test
+    @DisplayName("성공-동일 회원과 주문번호라도 거래 유형이 다르면 별도 거래 처리")
+    void transactionAllowsSameMemberAndOrderNoForDifferentTxTypes() {
+        String memberId = memberId();
+        String orderNo = orderNo("LOOKUP-SAME-ORDER");
+        EarnResponse earnResponse = givenEarnByOrderNo(memberId, orderNo, EarnType.NORMAL, 1_000, "P10D");
+        UseResponse useResponse = givenUseByOrderNo(memberId, orderNo, 400);
+
+        TransactionLookupResponse earnLookup = pointFacadeService.getTransactionByOrder(memberId, orderNo, TxType.EARN);
+        TransactionLookupResponse useLookup = pointFacadeService.getTransactionByOrder(memberId, orderNo, TxType.USE);
+
+        assertTrue(earnLookup.exists());
+        assertEquals(earnResponse.pointTransactionNo(), earnLookup.transaction().pointTransactionNo());
+        assertEquals(TxType.EARN, earnLookup.transaction().txType());
+        assertTrue(useLookup.exists());
+        assertEquals(useResponse.pointTransactionNo(), useLookup.transaction().pointTransactionNo());
+        assertEquals(TxType.USE, useLookup.transaction().txType());
     }
 
     @Test
@@ -91,12 +110,12 @@ class TransactionLookupApiTests extends PointApiTestSupport {
         givenEarn(memberId, "LOOKUP-EXISTING-EARN", EarnType.NORMAL, 100, "P10D");
         String orderNo = orderNo("LOOKUP-MISSING");
 
-        TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, null);
+        TransactionLookupResponse response = pointFacadeService.getTransactionByOrder(memberId, orderNo, TxType.EARN);
 
         assertFalse(response.exists());
         assertEquals(memberId, response.memberId());
         assertEquals(orderNo, response.orderNo());
-        assertNull(response.txType());
+        assertEquals(TxType.EARN, response.txType());
         assertNull(response.transaction());
     }
 
@@ -106,9 +125,18 @@ class TransactionLookupApiTests extends PointApiTestSupport {
         String memberId = memberId();
 
         ApiException exception = assertThrows(ApiException.class,
-                () -> pointFacadeService.getTransactionByOrder(memberId, orderNo("LOOKUP-UNKNOWN"), null));
+                () -> pointFacadeService.getTransactionByOrder(memberId, orderNo("LOOKUP-UNKNOWN"), TxType.EARN));
 
         assertEquals(ErrorCode.INVALID_USER, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("실패-거래 유형이 누락된 주문번호 기반 조회, INVALID_PARAMETER")
+    void getTransactionByOrderApiRejectsMissingTxType() throws Exception {
+        mockMvc.perform(get("/v1/members/{memberId}/points/transactions/by-order", memberId())
+                        .param("orderNo", orderNo("LOOKUP-MISSING-TYPE")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.name()));
     }
 
     @Test
