@@ -66,6 +66,30 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
+    @DisplayName("실패-동일 주문번호 사용취소 재호출, DUPLICATED_ORDER")
+    void useCancelRejectsDuplicatedOrderNoWithoutAdditionalBalanceChange() {
+        String memberId = memberId();
+        givenEarn(memberId, "USE-CANCEL-DUPLICATE-EARN", EarnType.NORMAL, 1_000, "P10D");
+        UseResponse useResponse = givenUse(memberId, "USE-CANCEL-DUPLICATE-USE", 400);
+        UseCancelRequest request = new UseCancelRequest(
+                orderNo("USE-CANCEL-DUPLICATE"),
+                null,
+                useResponse.pointTransactionNo(),
+                150
+        );
+
+        pointFacadeService.useCancel(memberId, request);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> pointFacadeService.useCancel(memberId, request));
+        PntUseMst useMst = pntUseMstRepository.findById(useResponse.pointTransactionNo()).orElseThrow();
+
+        assertEquals(ErrorCode.DUPLICATED_ORDER, exception.getErrorCode());
+        assertEquals(750, pointFacadeService.getBalance(memberId).totalAmount());
+        assertEquals(150, useMst.getCancelAmount());
+    }
+
+    @Test
     @DisplayName("성공-취소 가능 잔액 범위에서 여러 차례 부분 사용취소")
     void useCancelAllowsMultiplePartialCancelsUntilRemainingAmount() {
         String memberId = memberId();

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.payment.point.api.earn.EarnResponse;
+import com.payment.point.api.use.UseRequest;
 import com.payment.point.api.use.UseResponse;
 import com.payment.point.domain.balance.PntMemberBal;
 import com.payment.point.domain.balance.PntMemberBalRepository;
@@ -61,6 +62,22 @@ class UseApiTests extends PointApiTestSupport {
                 () -> givenUse(memberId, "USE-API", 200));
 
         assertEquals(ErrorCode.NOT_ENOUGH_POINT, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("실패-동일 주문번호 사용 재호출, DUPLICATED_ORDER")
+    void useRejectsDuplicatedOrderNoWithoutAdditionalBalanceChange() {
+        String memberId = memberId();
+        givenEarn(memberId, "USE-DUPLICATE-EARN", EarnType.NORMAL, 1_000, "P10D");
+        UseRequest request = new UseRequest(orderNo("USE-DUPLICATE"), null, 400);
+
+        pointFacadeService.use(memberId, request);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> pointFacadeService.use(memberId, request));
+
+        assertEquals(ErrorCode.DUPLICATED_ORDER, exception.getErrorCode());
+        assertEquals(600, pointFacadeService.getBalance(memberId).totalAmount());
     }
 
     @Test
