@@ -4,7 +4,7 @@ Project point_service {
 }
 
 Table POINT.PNT_MEMBER_BAL {
-  MEMBER_ID varchar(32) [pk, not null, note: '회원아이디 (영문자와 숫자로 구성된 최대 32자리 문자열)']
+  MEMBER_ID varchar(32) [pk, not null, note: '회원아이디 (공백 문자를 포함하지 않는 최대 32자리 문자열)']
   NORMAL_AMT bigint [not null, note: '일반 적립 포인트 잔액']
   MANUAL_AMT bigint [not null, note: '관리자 수기 지급 포인트 잔액']
   EXPIRED_AMT bigint [not null, note: '누적 만료 포인트 금액']
@@ -33,7 +33,7 @@ Table POINT.PNT_TR_HIST {
   CREATED_AT timestamp [not null, note: '서버 생성 시각']
 
   indexes {
-    (MEMBER_ID, ORDER_NO) [unique, name: 'UK_PNT_TR_HIST_01']
+    (MEMBER_ID, ORDER_NO, TX_TYPE) [unique, name: 'UK_PNT_TR_HIST_01']
     (MEMBER_ID, OPTXNO) [name: 'IDX_PNT_TR_HIST_02']
     (MEMBER_ID, CREATED_AT) [name: 'IDX_PNT_TR_HIST_03']
   }
