@@ -32,7 +32,7 @@ public class PointExpireService {
     /**
      * <b>적립 후 다음 만료 예정일 설정</b>
      * @param balance 잔액정보
-     * @param earnedExpireDate 적립건 만료 예정일
+     * @param earnedExpireDate 적립 건 만료 예정일
      */
     public void updateNextExpireDateAfterEarn(PntMemberBal balance, LocalDate earnedExpireDate) {
         updateNextExpireDateIfEarlier(balance, earnedExpireDate);

@@ -107,7 +107,7 @@ public class PntMemberBal {
     }
 
     /**
-     * <b>일반 적립 감소</b>
+     * <b>관리자 수기 지급 포인트 감소</b>
      * @param amount 감소금액
      */
     public void decreaseManual(long amount) {

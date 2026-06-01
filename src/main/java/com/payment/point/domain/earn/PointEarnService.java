@@ -184,9 +184,9 @@ public class PointEarnService {
     }
 
     /**
-     * <b>만료된 원 적립건의 사용취소 금액을 신규 RESTORE 적립으로 생성</b>
+     * <b>만료된 원 적립 건의 사용취소 금액을 신규 RESTORE 적립으로 생성</b>
      * <pre>
-     *     신규 적립건의 만료일은 기본 만료일로 설정한다.
+     *     신규 적립 건의 만료일은 기본 만료일로 설정한다.
      * </pre>
      * @param memberId 회원아이디
      * @param amount 복원 금액

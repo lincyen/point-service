@@ -20,7 +20,7 @@ public enum ErrorCode {
     INVALID_HISTORY_PERIOD("시작일은 종료일보다 이전이어야 합니다."),
     HISTORY_PERIOD_EXCEEDED("조회 가능 기간이 아닙니다."),
     NO_HISTORY_RESULT("조회 결과가 없습니다."),
-    POINT_PROCESSING("이미 동일 사용자 거래건이 처리중입니다.");
+    POINT_PROCESSING("이미 동일 사용자 거래 건이 처리 중입니다.");
 
     ErrorCode(String message) {
         this.message = message;

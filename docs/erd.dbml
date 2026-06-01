@@ -89,10 +89,10 @@ Table POINT.PNT_USE_ALLOC {
   EARN_PTXNO varchar(26) [not null, note: '사용된 적립 거래번호']
   MEMBER_ID varchar(32) [not null, note: '회원아이디']
   PRIORITY integer [not null, note: '사용 차감 순서']
-  CNSM_AMT bigint [not null, note: '해당 적립건에서 사용한 금액']
+  CNSM_AMT bigint [not null, note: '해당 적립 건에서 사용한 금액']
   CNCL_AMT bigint [not null, note: '해당 사용분 중 취소된 금액']
   RMN_AMT bigint [not null, note: '남은 취소 가능 금액']
-  EXP_DT date [not null, note: '사용 당시 적립건 만료일']
+  EXP_DT date [not null, note: '사용 당시 적립 건 만료일']
   CREATED_AT timestamp [not null, note: '생성일시']
   UPDATED_AT timestamp [not null, note: '수정일시']
 

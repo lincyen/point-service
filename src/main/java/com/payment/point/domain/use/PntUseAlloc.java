@@ -42,7 +42,7 @@ public class PntUseAlloc {
     @Column(name = "PRIORITY", nullable = false)
     private Integer priority;
 
-    /** 해당 적립건에서 사용한 금액 */
+    /** 해당 적립 건에서 사용한 금액 */
     @Column(name = "CNSM_AMT", nullable = false)
     private Long consumeAmount;
 
@@ -54,7 +54,7 @@ public class PntUseAlloc {
     @Column(name = "RMN_AMT", nullable = false)
     private Long remainingAmount;
 
-    /** 사용 당시 적립건 만료일 */
+    /** 사용 당시 적립 건 만료일 */
     @Column(name = "EXP_DT", nullable = false)
     private LocalDate expireDate;
 

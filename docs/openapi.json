@@ -159,7 +159,7 @@
           "Point"
         ],
         "summary": "포인트 사용취소",
-        "description": "사용한 금액 중 전체 또는 일부를 취소한다. 사용취소는 사용 당시 차감된 Allocation 우선순위 순서대로 복원하며, 원 적립건이 만료된 경우 해당 금액만큼 신규 RESTORE 적립을 생성한다. RESTORE 적립의 만료일은 사용취소 처리일에 기본 만료 기간을 더해 설정한다.",
+        "description": "사용한 금액 중 전체 또는 일부를 취소한다. 사용취소는 사용 당시 차감된 Allocation 우선순위 순서대로 복원하며, 원 적립 건이 만료된 경우 해당 금액만큼 신규 RESTORE 적립을 생성한다. RESTORE 적립의 만료일은 사용취소 처리일에 기본 만료 기간을 더해 설정한다.",
         "operationId": "cancelUsePoint",
         "parameters": [
           {
@@ -1020,7 +1020,7 @@
       },
       "EarnRequestType": {
         "type": "string",
-        "description": "외부 요청에서 허용하는 포인트 적립 유형. RESTORE는 만료된 원 적립건의 사용취소 시 내부적으로만 생성한다.",
+        "description": "외부 요청에서 허용하는 포인트 적립 유형. RESTORE는 만료된 원 적립 건의 사용취소 시 내부적으로만 생성한다.",
         "enum": [
           "NORMAL",
           "MANUAL"

@@ -24,8 +24,8 @@ public class PointUseService {
      * @param earnPointTransactionNo 사용된 적립 거래번호
      * @param memberId 회원아이디
      * @param priority 사용 차감 순서
-     * @param consumeAmount 해당 사용분 중 취소된 금액
-     * @param expireDate 사용 당시 적립건 만료일
+     * @param consumeAmount 해당 적립 건에서 사용한 금액
+     * @param expireDate 사용 당시 적립 건 만료일
      */
     public void createAllocation(String pointTransactionNo,
                                  String earnPointTransactionNo,
@@ -46,7 +46,7 @@ public class PointUseService {
     }
 
     /**
-     * <b>사용 원장 등록<b/>
+     * <b>사용 원장 등록</b>
      * <pre>
      *     사용 Allocation FK의 부모 row이므로 Allocation 등록 전에 DB에 반영
      * </pre>

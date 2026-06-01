@@ -207,7 +207,7 @@ class UseCancelApiTests extends PointApiTestSupport {
     }
 
     @Test
-    @DisplayName("성공-원 적립건 만료 시 RESTORE 신규 적립 생성")
+    @DisplayName("성공-원 적립 건 만료 시 RESTORE 신규 적립 생성")
     void useCancelCreatesRestoreEarnWhenOriginalEarnIsExpired() {
         String memberId = memberId();
         EarnResponse earnA = givenEarn(memberId, "USE-CANCEL-EXPIRED-EARN-A", EarnType.NORMAL, 1_000, "P10D");
